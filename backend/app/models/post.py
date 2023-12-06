@@ -1,10 +1,7 @@
 from mongoengine import Document, fields
-from bson import ObjectId
 from datetime import datetime
-from app.config import ALLOWED_TAGS, ALLOWED_ATTRIBUTES, DOMAIN_ROOT
-from app.models.comment import CommentModel, VoteEmbedded
 from random import randint
-import bleach
+from app.config import DOMAIN_ROOT
 import re
 
 
@@ -12,9 +9,7 @@ class PostModel(Document):
     title = fields.StringField(required=True)
     author = fields.ObjectIdField(required=True)
     content = fields.StringField(required=True)
-    vote = fields.EmbeddedDocumentField(
-        document_type=VoteEmbedded, default=VoteEmbedded
-    )
+    vote = fields.IntField(default=0, required=True)
     comments = fields.ListField(fields.ObjectIdField(), default=[])
     url = fields.StringField(required=True)
     created_at = fields.DateTimeField(required=True)
@@ -40,49 +35,3 @@ class PostModel(Document):
         if not self.deleted_at:
             self.deleted_at = datetime.now()
             self.save()
-
-    @classmethod
-    def create(cls, title: str, author_id: ObjectId, content: str):
-        title = bleach.clean(
-            title,
-            tags=ALLOWED_TAGS,
-            attributes=ALLOWED_ATTRIBUTES,
-        )
-        content = bleach.clean(
-            content,
-            tags=ALLOWED_TAGS,
-            attributes=ALLOWED_ATTRIBUTES,
-        )
-        return cls(title=title, author=author_id, content=content).save()
-
-    @classmethod
-    def update(cls, post_id, update_values):
-        post = cls.objects.filter(id=post_id).first()
-        if not post:
-            return None
-
-        for key, value in update_values.items():
-            setattr(post, key, value)
-        post.save()
-
-        return post
-
-    @classmethod
-    def get_by_id(cls, post_id: ObjectId):
-        post = cls.objects.filter(id=post_id, deleted_at=None).first()
-        return post if post else None
-
-    @classmethod
-    def get_by_url(cls, url: str):
-        post = cls.objects.filter(url=url, deleted_at=None).first()
-        return post if post else None
-
-    @classmethod
-    def get_user_posts(cls, user_id: ObjectId, excluded_fields: list = None):
-        posts = cls.objects.filter(author=user_id, deleted_at=None).order_by(
-            "-updated_at"
-        )
-        if excluded_fields:
-            posts.exclude(*excluded_fields)
-
-        return posts if posts else None

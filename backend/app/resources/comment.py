@@ -1,5 +1,4 @@
 from flask_restful import Resource, request
-from bson import ObjectId
 from app.middleware.auth import auth_required
 
 from app.models.comment import CommentModel
@@ -15,15 +14,15 @@ class CommentResource(Resource):
         if errors:
             return {"error": "Unallowed attribute."}, 400
 
-        post = PostModel.get_by_id(post_id=values["post_id"])
+        post = PostModel.objects.get(id=values["post_id"], deleted_at=None)
         if not post:
             return {"error": "Post not found."}, 404
 
-        created_comment = CommentModel.create_comment(
-            post_id=values["post_id"],
+        created_comment = CommentModel(
             author=request.user["id"],
+            post_id=values["post_id"],
             content=values["content"],
-        )
+        ).save()
 
         post.comments.append(created_comment.id)
         post.save()

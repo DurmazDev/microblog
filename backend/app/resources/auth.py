@@ -1,7 +1,7 @@
 from flask_restful import request
 from app.models.user import UserModel
 from app.schemas.user import user_schema
-from bcrypt import checkpw
+from bcrypt import checkpw, hashpw, gensalt
 from app.utils import create_token
 
 
@@ -11,7 +11,7 @@ def LoginView():
     if errors:
         return {"error": "Unallowed attribute."}, 400
 
-    user = UserModel.get_by_email(email=values["email"])
+    user = UserModel.objects.get(email=values["email"], deleted_at=None)
     if not user:
         return {"error": "User not found."}, 404
 
@@ -23,6 +23,7 @@ def LoginView():
             "token": create_token(user_data),
             "user": user_data,
         }, 200
+    return {"error": "Wrong email or password."}, 401
 
 
 def RegisterView():
@@ -31,14 +32,16 @@ def RegisterView():
     if errors:
         return {"error": "Unallowed attribute."}, 400
 
-    user = UserModel.get_by_email(email=values["email"])
+    user = UserModel.objects.get(email=values["email"], deleted_at=None)
     if user:
         return {"error": "User with this e-mail already exists."}, 409
-    user = UserModel.create(
+
+    user = UserModel(
         name=values["name"],
         email=values["email"],
-        password=values["password"],
-    )
+        password=hashpw(values["password"].encode("utf-8"), gensalt(rounds=12)),
+    ).save()
+
     user_data = user_schema.dump(user)
     return {
         "message": "User created successfully.",

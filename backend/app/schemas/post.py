@@ -4,15 +4,10 @@ from bson import ObjectId
 Schema.TYPE_MAPPING[ObjectId] = fields.String()
 
 
-class VoteEmbeddedSchema(Schema):
-    up = fields.Int(required=True, default=0, validate=lambda x: x >= 0)
-    down = fields.Int(required=True, default=0, validate=lambda x: x >= 0)
-
-
 class CommentEmbeddedSchema(Schema):
     author = fields.String(required=True)
     content = fields.String(required=True, max_length=1024)
-    vote = fields.Nested(VoteEmbeddedSchema, default={})
+    vote = fields.Integer(required=True, dump_only=True)
 
 
 class PostSchema(Schema):
@@ -20,7 +15,7 @@ class PostSchema(Schema):
     title = fields.String(required=True)
     author = fields.String(required=True, dump_only=True)
     content = fields.String(required=True)
-    vote = fields.Nested(VoteEmbeddedSchema, default={})
+    vote = fields.Integer(dump_only=True)
     comments = fields.Nested(CommentEmbeddedSchema, many=True)
     url = fields.String(required=True, dump_only=True)
     created_at = fields.DateTime(dump_only=True)
