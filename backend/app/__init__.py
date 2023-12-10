@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_restful import Api
 from flask_cors import CORS
-from mongoengine import connect, ValidationError as ME_ValidationError
+from mongoengine import connect, ValidationError as ME_ValidationError, DoesNotExist
 from marshmallow import ValidationError as MMW_ValidationError
 from app.config import Config, LOGGING_CONFIG
 from logging.config import dictConfig
@@ -35,6 +35,11 @@ def handle_validation_error(error):
     return {"error": "Unsupported ID value."}, 400
 
 
+@app.errorhandler(DoesNotExist)
+def handle_doesnotexists_error(error):
+    return {"error": "Not found."}, 404
+
+
 @app.errorhandler(KeyError)
 def handle_key_error(error):
     app.logger.error(error)
@@ -47,7 +52,7 @@ api.add_resource(RootResource, "/")
 api.add_resource(UserResource, "/user", "/user/<string:id>")
 api.add_resource(ShowPostResource, "/post/<string:id>")
 api.add_resource(PostResource, "/post", "/post/<string:id>")
-api.add_resource(CommentResource, "/comment")
+api.add_resource(CommentResource, "/comment", "/comment/<string:id>")
 api.add_resource(VoteResource, "/vote")
 api.add_resource(FeedResource, "/feed")
 app.add_url_rule("/auth/login", "login", LoginView, methods=["POST"])

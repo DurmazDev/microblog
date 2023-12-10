@@ -17,13 +17,11 @@ class VoteResource(Resource):
         if values["vote_value"] > 1 or values["vote_value"] < -1:
             return {"error": "Unallowed attribute."}, 400
 
-        post = PostModel.objects.get(id=values["post_id"], deleted_at=None)
+        post = PostModel.objects(id=values["post_id"], deleted_at=None).first()
         if not post:
             return {"error": "Post not found."}, 404
 
-        recent_vote = VoteModel.get(
-            author=request.user["id"], post_id=values["post_id"]
-        )
+        recent_vote = VoteModel(author=request.user["id"], post_id=values["post_id"])
 
         if recent_vote:
             if values["vote_value"] == 0:

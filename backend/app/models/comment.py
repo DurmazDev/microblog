@@ -1,9 +1,14 @@
-from mongoengine import fields, Document
+from mongoengine import fields, Document, EmbeddedDocument
 from datetime import datetime
 
 
+class AuthorEmbedded(EmbeddedDocument):
+    id = fields.ObjectIdField(required=True)
+    name = fields.StringField(required=True)
+
+
 class CommentModel(Document):
-    author = fields.ObjectIdField(required=True)
+    author = fields.EmbeddedDocumentField(AuthorEmbedded, required=True)
     post_id = fields.ObjectIdField(required=True)
     content = fields.StringField(reuqired=True, max_length=1024)  # 1024 is random value
     created_at = fields.DateTimeField(required=True)

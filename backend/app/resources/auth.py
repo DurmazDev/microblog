@@ -11,7 +11,7 @@ def LoginView():
     if errors:
         return {"error": "Unallowed attribute."}, 400
 
-    user = UserModel.objects.get(email=values["email"], deleted_at=None)
+    user = UserModel.objects(email=values["email"], deleted_at=None).first()
     if not user:
         return {"error": "User not found."}, 404
 
@@ -32,7 +32,7 @@ def RegisterView():
     if errors:
         return {"error": "Unallowed attribute."}, 400
 
-    user = UserModel.objects.get(email=values["email"], deleted_at=None)
+    user = UserModel.objects(email=values["email"], deleted_at=None).first()
     if user:
         return {"error": "User with this e-mail already exists."}, 409
 

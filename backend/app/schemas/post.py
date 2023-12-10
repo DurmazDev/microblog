@@ -4,8 +4,13 @@ from bson import ObjectId
 Schema.TYPE_MAPPING[ObjectId] = fields.String()
 
 
+class AuthorEmbeddedSchema(Schema):
+    id = fields.String(dump_only=True)
+    name = fields.String(dump_only=True)
+
+
 class CommentEmbeddedSchema(Schema):
-    author = fields.String(required=True)
+    author = fields.Nested(AuthorEmbeddedSchema)
     content = fields.String(required=True, max_length=1024)
     vote = fields.Integer(required=True, dump_only=True)
 

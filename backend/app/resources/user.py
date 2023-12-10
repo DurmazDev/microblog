@@ -7,7 +7,7 @@ from app.middleware.auth import auth_required
 class UserResource(Resource):
     @auth_required
     def get(self):
-        user = UserModel.objects.get(id=request.user["id"], deleted_at=None)
+        user = UserModel.objects(id=request.user["id"], deleted_at=None).first()
         if not user:
             return {"error": "User not found."}, 404
         return user_schema.dump(user)
@@ -18,7 +18,7 @@ class UserResource(Resource):
         if request.user["id"] != id:
             return {"error": "You are not authorized for this event."}, 401
         data = user_schema.load(values)
-        user = UserModel.objects.get(id=id, deleted_at=None)
+        user = UserModel.objects(id=id, deleted_at=None).first()
         if not user:
             return {"error": "User not found"}, 404
 
@@ -29,9 +29,7 @@ class UserResource(Resource):
 
     @auth_required
     def delete(self):
-        authenticated_user = UserModel.objects.get(
-            id=request.user["id"], deleted_at=None
-        )
+        authenticated_user = UserModel.objects(id=request.user["id"], deleted_at=None).first()
         if not authenticated_user:
             return {"error": "You are not authorized for this event."}, 401
 
