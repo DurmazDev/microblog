@@ -1,11 +1,11 @@
-from mongoengine import Document, fields
+from mongoengine import Document, fields, NotUniqueError
 from datetime import datetime
 from app.models.post import PostModel
 
 
 class UserModel(Document):
     name = fields.StringField(required=True)
-    email = fields.EmailField(required=True)
+    email = fields.EmailField(required=True, unique=True)
     password = fields.StringField(required=True)
     created_at = fields.DateTimeField(required=True)
     updated_at = fields.DateTimeField(required=True)

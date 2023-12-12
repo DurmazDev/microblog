@@ -1,7 +1,12 @@
 from flask import Flask
 from flask_restful import Api
 from flask_cors import CORS
-from mongoengine import connect, ValidationError as ME_ValidationError, DoesNotExist
+from mongoengine import (
+    connect,
+    NotUniqueError,
+    ValidationError as ME_ValidationError,
+    DoesNotExist,
+)
 from marshmallow import ValidationError as MMW_ValidationError
 from app.config import Config, LOGGING_CONFIG
 from logging.config import dictConfig
@@ -33,6 +38,12 @@ def handle_validation_error(error):
 @app.errorhandler(ME_ValidationError)  # MongoEngine Validation Error
 def handle_validation_error(error):
     return {"error": "Unsupported ID value."}, 400
+
+
+@app.errorhandler(NotUniqueError)
+def handle_notunique_error(error):
+    # TODO(ahmet): Catch keyPattern and return it.
+    return {"error": "Bad request."}, 400
 
 
 @app.errorhandler(DoesNotExist)
