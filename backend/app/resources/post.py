@@ -11,6 +11,17 @@ import bleach
 
 
 class ShowPostResource(Resource):
+    """
+    Endpoint:
+        GET /posts/<id>
+
+    Parameters:
+        id (str): Post ID or URL slug.
+
+    Returns:
+        JSON: Post details, including associated comments.
+    """
+
     def get(self, id):
         if ObjectId.is_valid(id):
             post = PostModel.objects(id=id, deleted_at=None).first()
@@ -27,8 +38,22 @@ class ShowPostResource(Resource):
 
 
 class PostResource(Resource):
+    """
+    Endpoint:
+        GET /posts
+        POST /posts
+        PUT /posts/<id>
+        DELETE /posts/<id>
+    """
+
     @auth_required
     def get(self):
+        """
+        Retrieves posts authored by the authenticated user.
+
+        Returns:
+            JSON: List of user's posts.
+        """
         excluded_fields = ["content", "comments", "vote"]
         posts = (
             PostModel.objects.filter(author=request.user["id"], deleted_at=None)
@@ -43,26 +68,21 @@ class PostResource(Resource):
 
     @auth_required
     def post(self):
+        """
+        Creates a new post for the authenticated user.
+
+        Returns:
+            JSON: Message indicating successful post creation and post details.
+        """
         values = request.get_json()
         errors = post_schema.validate(values)
         if errors:
             return {"error": "Unallowed attribute."}, 400
 
-        title = bleach.clean(
-            values["title"],
-            tags=ALLOWED_TAGS,
-            attributes=ALLOWED_ATTRIBUTES,
-        )
-        content = bleach.clean(
-            values["content"],
-            tags=ALLOWED_TAGS,
-            attributes=ALLOWED_ATTRIBUTES,
-        )
-
         created_post = PostModel(
-            title=title,
+            title=values["title"],
             author=request.user["id"],
-            content=content,
+            content=values["content"],
         ).save()
 
         return {
@@ -73,6 +93,15 @@ class PostResource(Resource):
 
     @auth_required
     def put(self, id):
+        """
+        Updates an existing post authored by the authenticated user.
+
+        Parameters:
+            id (str): Post ID
+
+        Returns:
+            JSON: Updated post details, including associated comments.
+        """
         values = request.get_json()
         data = post_schema.load(values)
         post = PostModel.objects(id=id, deleted_at=None).first()
@@ -84,7 +113,7 @@ class PostResource(Resource):
         for key, value in data.items():
             setattr(post, key, value)
         post.save()
-        
+
         comments = CommentModel.objects.filter(id__in=post.comments).limit(50)
         comments = comment_schema.dump(comments, many=True)
         post.comments = comments
@@ -93,7 +122,18 @@ class PostResource(Resource):
 
     @auth_required
     def delete(self, id):
-        authenticated_user = UserModel.objects(id=request.user["id"], deleted_at=None).first()
+        """
+        Deletes an existing post authored by the authenticated user.
+
+        Parameters:
+            id (str): Post ID
+
+        Returns:
+            int: HTTP status code 204 for successful deletion.
+        """
+        authenticated_user = UserModel.objects(
+            id=request.user["id"], deleted_at=None
+        ).first()
         if not authenticated_user:
             return {"error": "You are not authorized for this event."}, 401
 

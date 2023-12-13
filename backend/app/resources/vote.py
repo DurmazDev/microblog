@@ -6,8 +6,30 @@ from app.middleware.auth import auth_required
 
 
 class VoteResource(Resource):
+    """
+    Resource for managing user votes on posts.
+
+    Endpoint:
+        POST /votes
+
+    Returns:
+        JSON: Message indicating the success or failure of the vote operation.
+    """
+
     @auth_required
     def post(self):
+        """
+        Handles POST requests to cast a vote on a post.
+
+        Body:
+            {
+                "post_id": "string",
+                "vote_value": integer in [-1, 0, 1]
+            }
+
+        Returns:
+            JSON: Message indicating the success or failure of the vote operation.
+        """
         # NOTE(ahmet): I definitely know this block could be more better...
         values = request.get_json()
         errors = vote_schema.validate(values)

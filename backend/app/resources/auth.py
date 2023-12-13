@@ -6,6 +6,21 @@ from app.utils import create_token
 
 
 def LoginView():
+    """
+    Logs in a user and returns an authentication token.
+
+    Endpoint:
+        POST /login
+
+        Body:
+        {
+            "email": "string",
+            "password": "string"
+        }
+
+    Returns:
+        JSON: Authentication token and user data on successful login, or error message on authentication failure.
+    """
     values = request.get_json()
     errors = user_schema.validate(values)
     if errors:
@@ -27,6 +42,15 @@ def LoginView():
 
 
 def RegisterView():
+    """
+    Registers a new user and returns an authentication token.
+
+    Endpoint:
+        POST /register
+
+    Returns:
+        JSON: Authentication token and user data on successful registration, or error message if user already exists.
+    """
     values = request.get_json()
     errors = user_schema.validate(values)
     if errors:

@@ -5,8 +5,21 @@ from app.middleware.auth import auth_required
 
 
 class UserResource(Resource):
+    """
+    Endpoint:
+        GET /user
+        PUT /user/<id>
+        DELETE /user
+    """
+
     @auth_required
     def get(self):
+        """
+        Retrieves the profile information of the authenticated user.
+
+        Returns:
+            JSON: User profile details.
+        """
         user = UserModel.objects(id=request.user["id"], deleted_at=None).first()
         if not user:
             return {"error": "User not found."}, 404
@@ -14,6 +27,22 @@ class UserResource(Resource):
 
     @auth_required
     def put(self, id):
+        """
+        Updates the profile information of the authenticated user.
+
+        Parameters:
+            id (str): User ID
+
+        Body:
+            {
+                "name": "string",
+                "email": "string",
+                "password": "string"
+            }
+
+        Returns:
+            JSON: Updated user profile details.
+        """
         values = request.get_json()
         if request.user["id"] != id:
             return {"error": "You are not authorized for this event."}, 401
@@ -29,7 +58,15 @@ class UserResource(Resource):
 
     @auth_required
     def delete(self):
-        authenticated_user = UserModel.objects(id=request.user["id"], deleted_at=None).first()
+        """
+        Soft deletes the authenticated user's account.
+
+        Returns:
+            JSON: Message indicating account deletion confirmation email sent.
+        """
+        authenticated_user = UserModel.objects(
+            id=request.user["id"], deleted_at=None
+        ).first()
         if not authenticated_user:
             return {"error": "You are not authorized for this event."}, 401
 

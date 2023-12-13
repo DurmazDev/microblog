@@ -4,6 +4,18 @@ import jwt
 
 
 def create_token(data: object):
+    """
+    Signs data with JWT.
+
+    Parameters
+    ---------
+    data: Object
+
+    Returns
+    ---------
+    string
+        JWT signed token.
+    """
     return jwt.encode(data, SECRET_KEY, algorithm="HS256")
 
 
@@ -29,13 +41,14 @@ def paginate_query(query, page: int, limit: int, schema, sort: [str] = []):
     dict
         Paginated results with pagination information.
     """
+    page = 1 if page < 1 else page
+    limit = 50 if limit < 1 else limit
+    # WARN(ahmet): If page greater than total_page we should not run the query
     offset = (page - 1) * limit
     results = query.skip(offset).limit(limit)
 
-    print(sort, *sort)
     if sort:
         results = results.order_by(*sort)
-    print(results[0].id, results[1].id)
 
     result_count = query.count()
 

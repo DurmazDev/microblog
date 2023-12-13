@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_restful import Api
+from flask_restful import Api, request
 from flask_cors import CORS
 from mongoengine import (
     connect,
@@ -31,28 +31,36 @@ connect(host=Config.MONGODB_SETTINGS["host"])
 
 @app.errorhandler(MMW_ValidationError)  # Marshmallow Validation Error
 def handle_validation_error(error):
-    # return {"error": "Unallowed attribute."}, 400
+    app.logger.error(error)
     return {"error": "Validation error"}, 400
 
 
 @app.errorhandler(ME_ValidationError)  # MongoEngine Validation Error
 def handle_validation_error(error):
+    app.logger.error(error)
     return {"error": "Unsupported ID value."}, 400
 
 
 @app.errorhandler(NotUniqueError)
 def handle_notunique_error(error):
-    # TODO(ahmet): Catch keyPattern and return it.
+    app.logger.error(error)
     return {"error": "Bad request."}, 400
 
 
 @app.errorhandler(DoesNotExist)
 def handle_doesnotexists_error(error):
+    app.logger.error(error)
     return {"error": "Not found."}, 404
 
 
 @app.errorhandler(KeyError)
 def handle_key_error(error):
+    app.logger.error(error)
+    return {"error": "An error occurred."}, 500
+
+
+@app.errorhandler(Exception)
+def handle_other_errors(error):
     app.logger.error(error)
     return {"error": "An error occurred."}, 500
 

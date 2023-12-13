@@ -9,19 +9,23 @@ from app.schemas.comment import comment_schema
 
 
 class CommentResource(Resource):
+    """
+    Endpoint:
+        GET /comments/<id>
+        POST /comments
+        PUT /comments/<id>
+        DELETE /comments/<id>
+    """
+
     def get(self, id):
         """
         Lists the comments of the post.
 
-        Parameters
-        -------
-        id: ObjectId
-            Post ID Value
+        Parameters:
+            id (ObjectId): Post ID Value
 
-        Returns
-        -------
-        JSON
-            List of comments with pagination as JSON
+        Returns:
+            JSON: List of comments with pagination as JSON
         """
         page = request.args.get("page", 1, type=int)
         limit = request.args.get("limit", 50, type=int)
@@ -31,6 +35,12 @@ class CommentResource(Resource):
 
     @auth_required
     def post(self):
+        """
+        Creates a new comment on a post.
+
+        Returns:
+            JSON: Message indicating successful comment creation or error message
+        """
         values = request.get_json()
         errors = comment_schema.validate(values)
         if errors:
@@ -52,6 +62,15 @@ class CommentResource(Resource):
 
     @auth_required
     def put(self, id):
+        """
+        Updates an existing comment.
+
+        Parameters:
+            id (ObjectId): Comment ID Value
+
+        Returns:
+            JSON: Updated comment as JSON or error message
+        """
         values = request.get_json()
         data = comment_schema.load(values)
         comment = CommentModel.objects(id=id, deleted_at=None).first()
@@ -67,6 +86,15 @@ class CommentResource(Resource):
 
     @auth_required
     def delete(self, id):
+        """
+        Deletes a comment.
+
+        Parameters:
+            id (ObjectId): Comment ID Value
+
+        Returns:
+            int: HTTP status code 204 for successful deletion or error message
+        """
         comment = CommentModel.objects(
             id=id, author__id=request.user["id"], deleted_at=None
         ).first()
