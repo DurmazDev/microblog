@@ -59,6 +59,12 @@ def handle_key_error(error):
     return {"error": "An error occurred."}, 500
 
 
+@app.errorhandler(404)
+def handle_not_found_error(error):
+    # app.logger.error(error)
+    return {"error": "Not found."}, 404
+
+
 @app.errorhandler(Exception)
 def handle_other_errors(error):
     app.logger.error(error)
