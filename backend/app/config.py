@@ -1,12 +1,13 @@
 class Config:
     DEBUG = True
     PORT = 8000
-    REDIS_SETTINGS = {"host": "127.0.0.1", "port": 6379, "db": 0}
-    MONGODB_SETTINGS = {"host": "mongodb://127.0.0.1:27017/microblog"}
+    HOST = "0.0.0.0"
+    REDIS_SETTINGS = {"host": "redis", "port": 6379, "db": 0}
+    MONGODB_SETTINGS = {"host": "mongodb://mongo:27017/microblog"}
     # MONGODB_SETTINGS = {"host": "mongodb://172.17.0.2:27017/microblog"}
 
 
-DOMAIN_ROOT = "127.0.0.1:" + str(Config.PORT)
+DOMAIN_ROOT = Config.HOST + ":" + str(Config.PORT)
 SECRET_KEY = "usmanim_nereye_gidersin_youtu.be/0ZPg9GwExFg"
 JWT_ALGORITHM = "HS256"
 ALLOWED_TAGS = [
