@@ -1,4 +1,5 @@
 from app.config import SECRET_KEY
+from datetime import datetime, timedelta
 import math
 import jwt
 
@@ -16,7 +17,11 @@ def create_token(data: object):
     string
         JWT signed token.
     """
-    return jwt.encode(data, SECRET_KEY, algorithm="HS256")
+    return jwt.encode(
+        {"exp": datetime.utcnow() + timedelta(days=1), **data},
+        SECRET_KEY,
+        algorithm="HS256",
+    )
 
 
 def paginate_query(query, page: int, limit: int, schema, sort: [str] = []):
@@ -52,7 +57,7 @@ def paginate_query(query, page: int, limit: int, schema, sort: [str] = []):
 
     result_count = query.count()
 
-    if result_count == 0:
+    if result_count == 0 or len(results) == 0:
         return {"error": "No results found."}, 404
 
     results = schema.dump(results, many=True)

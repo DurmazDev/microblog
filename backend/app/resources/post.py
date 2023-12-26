@@ -5,9 +5,8 @@ from app.schemas.post import post_schema, PostSchema
 from app.models.user import UserModel
 from app.models.comment import CommentModel
 from app.schemas.comment import comment_schema
-from app.config import DOMAIN_ROOT, ALLOWED_TAGS, ALLOWED_ATTRIBUTES, DOMAIN_ROOT
+from app.config import DOMAIN_ROOT, DOMAIN_ROOT
 from app.middleware.auth import auth_required
-import bleach
 
 
 class ShowPostResource(Resource):

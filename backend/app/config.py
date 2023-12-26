@@ -1,7 +1,9 @@
 class Config:
     DEBUG = True
     PORT = 8000
-    MONGODB_SETTINGS = {"host": "mongodb://172.17.0.2:27017/microblog"}
+    REDIS_SETTINGS = {"host": "127.0.0.1", "port": 6379, "db": 0}
+    MONGODB_SETTINGS = {"host": "mongodb://127.0.0.1:27017/microblog"}
+    # MONGODB_SETTINGS = {"host": "mongodb://172.17.0.2:27017/microblog"}
 
 
 DOMAIN_ROOT = "127.0.0.1:" + str(Config.PORT)
