@@ -1,8 +1,47 @@
-from flask_restful import request
+from flask_restful import request, current_app
 from app.models.user import UserModel
 from app.schemas.user import user_schema
-from bcrypt import checkpw, hashpw, gensalt
 from app.utils import create_token
+from app.middleware.auth import auth_required
+from bcrypt import checkpw, hashpw, gensalt
+
+
+@auth_required
+def RefreshView():
+    """
+    Refreshes an authentication token.
+
+    Endpoint:
+        POST /auth/refresh
+
+    Returns:
+        JSON: Authentication token and user data on successful refresh, or error message on authentication failure.
+    """
+    current_app.config["jwt_redis_blocklist"].set(
+        request.user["id"], request.token, ex=current_app.config["REDIS_TOKEN_EXPIRES"]
+    )
+    return {
+        "message": "Successfully refreshed token.",
+        "token": create_token(request.user),
+        "user": request.user,
+    }, 200
+
+
+@auth_required
+def LogOutView():
+    """
+    Logs out a user by adding the user ID to the blacklist.
+
+    Endpoint:
+        POST /auth/logout
+
+    Returns:
+        JSON: Success message on successful logout.
+    """
+    current_app.config["jwt_redis_blocklist"].set(
+        request.user["id"], request.token, ex=current_app.config["REDIS_TOKEN_EXPIRES"]
+    )
+    return {"message": "Successfully logged out."}, 202
 
 
 def LoginView():
@@ -10,7 +49,7 @@ def LoginView():
     Logs in a user and returns an authentication token.
 
     Endpoint:
-        POST /login
+        POST /auth/login
 
         Body:
         {
@@ -46,7 +85,7 @@ def RegisterView():
     Registers a new user and returns an authentication token.
 
     Endpoint:
-        POST /register
+        POST /auth/register
 
     Returns:
         JSON: Authentication token and user data on successful registration, or error message if user already exists.

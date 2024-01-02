@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_restful import Api, request
+from flask_restful import Api
 from flask_cors import CORS
 from mongoengine import (
     connect,
@@ -10,6 +10,8 @@ from mongoengine import (
 from marshmallow import ValidationError as MMW_ValidationError
 from app.config import Config, LOGGING_CONFIG
 from logging.config import dictConfig
+import redis
+from datetime import timedelta
 
 from app.resources.root import RootResource
 from app.resources.user import UserResource
@@ -17,13 +19,21 @@ from app.resources.post import PostResource, ShowPostResource
 from app.resources.feed import FeedResource
 from app.resources.vote import VoteResource
 from app.resources.comment import CommentResource
-from app.resources.auth import LoginView, RegisterView
+from app.resources.auth import LoginView, RegisterView, LogOutView, RefreshView
 
 app = Flask(__name__)
 api = Api(app)
 app.config.from_object(Config)
+app.config["REDIS_TOKEN_EXPIRES"] = timedelta(days=1)
 
 CORS(app=app)
+
+app.config["jwt_redis_blocklist"] = redis.StrictRedis(
+    host=Config.REDIS_SETTINGS["host"],
+    port=Config.REDIS_SETTINGS["port"],
+    db=Config.REDIS_SETTINGS["db"],
+    decode_responses=True,
+)
 
 dictConfig(LOGGING_CONFIG)
 connect(host=Config.MONGODB_SETTINGS["host"])
@@ -59,6 +69,12 @@ def handle_key_error(error):
     return {"error": "An error occurred."}, 500
 
 
+@app.errorhandler(404)
+def handle_not_found_error(error):
+    app.logger.error(error)
+    return {"error": "Not found."}, 404
+
+
 @app.errorhandler(Exception)
 def handle_other_errors(error):
     app.logger.error(error)
@@ -76,3 +92,5 @@ api.add_resource(VoteResource, "/vote")
 api.add_resource(FeedResource, "/feed")
 app.add_url_rule("/auth/login", "login", LoginView, methods=["POST"])
 app.add_url_rule("/auth/register", "register", RegisterView, methods=["POST"])
+app.add_url_rule("/auth/logout", "logout", LogOutView, methods=["DELETE"])
+app.add_url_rule("/auth/refresh", "refresh", RefreshView, methods=["POST"])
