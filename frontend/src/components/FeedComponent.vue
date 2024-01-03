@@ -1,28 +1,37 @@
 <template>
-  <div class="max-w-6xl mx-auto">
-    <article class="p-6 bg-white rounded-lg border border-gray-200 shadow-md">
+  <div
+    v-if="!responseData"
+    class="flex justify-center mt-4"
+  >
+    <p v-if="error_message">{{ error_message }}</p>
+    <LoadingComponent v-else />
+  </div>
+  <div
+    v-else
+    class="max-w-6xl mx-auto mt-4"
+  >
+    <article
+      v-for="(item, index) in responseData"
+      :key="index"
+      class="p-6 bg-white rounded-lg border border-gray-200 shadow-md"
+    >
       <div class="flex justify-between items-center mb-5 text-gray-500">
         <h2 class="mb-2 text-2xl font-bold tracking-tight text-gray-900">
-          <a href="#">Our first project with React</a>
+          <a :href="item.url">{{ item.title }}</a>
         </h2>
-        <span class="text-sm mb-4">14 days ago</span>
+        <span class="text-sm mb-4"
+          >{{
+            Math.floor(
+              (new Date() - new Date(item.created_at)) / (1000 * 60 * 60 * 24)
+            )
+          }}
+          days ago</span
+        >
       </div>
-      <p class="mb-5 font-light text-gray-500">
-        Static websites are now used to bootstrap lots of websites and are
-        becoming the basis for a variety of tools that even influence both web
-        designers and developers influence both web designers and developers.
-      </p>
+      <p class="mb-5 font-light text-gray-500">{{ item.content }}</p>
       <div class="flex justify-between items-center">
-        <div class="flex items-center space-x-4">
-          <img
-            class="w-7 h-7 rounded-full"
-            src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/bonnie-green.png"
-            alt="Bonnie Green avatar"
-          />
-          <span class="font-medium"> Bonnie Green </span>
-        </div>
         <a
-          href="#"
+          :href="item.url"
           class="inline-flex items-center font-medium text-primary-600 hover:underline"
         >
           Read more
@@ -41,30 +50,90 @@
         </a>
       </div>
     </article>
+    <div class="mt-4">
+      <ul
+        v-if="pagination.total_pages > 1"
+        class="flex justify-center mt-4 -space-x-px text-sm"
+      >
+        <li v-if="pagination.prev_page">
+          <!-- TODO(ahmet): limit var iken page değiştirilirse limit yok oluyor. -->
+          <a
+            :href="`?page=${pagination.prev_page}`"
+            class="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700"
+            >Previous</a
+          >
+        </li>
+        <li
+          v-for="(item, index) in pagination.total_pages"
+          :key="index"
+        >
+          <a
+            :href="`?page=${item}`"
+            class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700"
+            >{{ item }}</a
+          >
+        </li>
+        <li v-if="pagination.next_page">
+          <a
+            :href="`?page=${pagination.next_page}`"
+            class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700"
+            >Next</a
+          >
+        </li>
+      </ul>
+    </div>
   </div>
-  <p>{{ responseData }}</p>
 </template>
 
 <script>
+  import useFetch from "@/hooks/useFetch.js";
+  import LoadingComponent from "./LoadingComponent.vue";
+
   export default {
+    components: { LoadingComponent },
+
     data() {
       return {
         responseData: null,
+        pagination: null,
+        error_message: null,
+        query_params: [],
       };
     },
-    mounted() {
-      this.fetchData();
-    },
-    methods: {
-      async fetchData() {
-        try {
-          const response = await fetch("http://127.0.0.1:8000/feed"); // API endpoint'inizi buraya ekleyin
-          const data = await response.json();
 
-          // API yanıtını responseData verisine atayın
-          this.responseData = data;
+    mounted() {
+      this.loadData();
+    },
+
+    methods: {
+      async loadData() {
+        let endpoint = "feed";
+        const query_params = [];
+        const params = new URLSearchParams(
+          window.location.search.substring(1)
+        );
+
+        if (params.has("page")) {
+          query_params.push("page=" + params.get("page"));
+        }
+        if (params.has("limit")) {
+          query_params.push("limit=" + params.get("limit"));
+        }
+
+        endpoint += "?" + query_params.join("&");
+
+        try {
+          const { data, error } = await useFetch(endpoint);
+
+          if (error.value) {
+            this.error_message = error.value;
+            return;
+          }
+
+          this.responseData = data.value.results;
+          this.pagination = data.value.pagination;
         } catch (error) {
-          console.error("Error fetching data:", error);
+          console.error("An error occurred while fetching data:", error.value);
         }
       },
     },

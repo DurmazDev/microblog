@@ -1,6 +1,3 @@
-<script setup>
-  import { RouterLink } from "vue-router";
-</script>
 <template>
   <div class="bg-white rounded-lg shadow m-4">
     <div class="w-full max-w-screen-xl mx-auto p-4 md:py-8">
@@ -10,7 +7,7 @@
           class="flex items-center mb-4 sm:mb-0 space-x-3 rtl:space-x-reverse"
         >
           <img
-            src="./icons/Icon.svg"
+            src="@/assets/icons/Icon.svg"
             class="h-8"
             alt="Logo"
           />
@@ -53,3 +50,13 @@
     </div>
   </div>
 </template>
+
+<script>
+  import { RouterLink } from "vue-router";
+
+  export default {
+    components: {
+      RouterLink,
+    },
+  };
+</script>

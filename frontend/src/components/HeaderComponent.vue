@@ -1,14 +1,3 @@
-<script setup>
-  import { RouterLink } from "vue-router";
-  defineProps({
-    auth: {
-      type: Boolean,
-      required: true,
-      default: false,
-    },
-  });
-</script>
-
 <template>
   <div class="bg-white border-b border-gray-200 px-4 lg:px-6 py-2.5">
     <div
@@ -19,7 +8,7 @@
         to="/"
       >
         <img
-          src="./icons/Icon.svg"
+          src="@/assets/icons/Icon.svg"
           class="mr-3 h-6 sm:h-9"
           alt="Logo"
         />
@@ -52,3 +41,18 @@
     </div>
   </div>
 </template>
+
+<script>
+  import { RouterLink } from "vue-router";
+  export default {
+    name: "HeaderComponent",
+    components: { RouterLink },
+    props: {
+      auth: {
+        type: Boolean,
+        required: true,
+        default: false,
+      },
+    },
+  };
+</script>
