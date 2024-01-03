@@ -31,6 +31,7 @@ class FeedResource(Resource):
 
         sort_values = []
 
+        # TODO(ahmet): Set author name to the response.
         if sort_vote:
             if sort_vote.lower() == "asc":
                 sort_values.append("vote")
