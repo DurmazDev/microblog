@@ -1,5 +1,12 @@
 <template>
-  <section class="bg-gray-50">
+  <LoadingComponent
+    v-if="isLoading"
+    class="flex justify-center"
+  />
+  <section
+    v-else
+    class="bg-gray-50"
+  >
     <div
       class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0"
     >
@@ -25,8 +32,9 @@
           </h1>
           <AlertComponent
             @close="handleCloseAlert"
-            :show-alert="alert_data.status"
-            :message="alert_data.message"
+            :message="this.alert_data.text"
+            :type="this.alert_data.type"
+            :show-alert="this.alert_data.status"
           />
           <form class="space-y-4 md:space-y-6">
             <div>
@@ -140,7 +148,7 @@
 <script>
   import AlertComponent from "@/components/AlertComponent.vue";
   import { RouterLink } from "vue-router";
-  import useFetch from "@/hooks/useFetch";
+  import { REGISTER } from "@/stores/auth.module";
 
   export default {
     name: "RegisterView",
@@ -149,7 +157,7 @@
       AlertComponent,
     },
     mounted() {
-      if (localStorage.getItem("token")) {
+      if (this.$store.getters.isAuthenticated) {
         this.$router.push({ name: "home" });
       }
     },
@@ -160,15 +168,17 @@
         password: null,
         confirmPassword: null,
         terms: false,
+        isLoading: false,
         alert_data: {
           status: false,
-          message: null,
+          text: null,
+          type: "error",
         },
-        error_message: null,
       };
     },
     methods: {
-      async register(e) {
+      register(e) {
+        this.isLoading = true;
         e.preventDefault();
         try {
           this.alert_data.status = false;
@@ -183,33 +193,23 @@
             this.alert_data.status = true;
             return;
           }
-          const { data, error } = await useFetch("auth/register", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
+          this.$store
+            .dispatch(REGISTER, {
               name: this.name,
               email: this.email,
               password: this.password,
-            }),
-          });
-
-          if (error.value) {
-            this.error_message = error.value;
-            this.alert_data.message = error.value;
-            this.alert_data.status = true;
-            return;
-          }
-
-          if (!data) {
-            this.alert_data.message = "Something went wrong.";
-            this.alert_data.status = true;
-            return;
-          }
-
-          localStorage.setItem("token", data.value.token);
-          this.$router.push({ name: "home" });
+            })
+            .then((response) => {
+              if (response.status !== 500) {
+                this.$router.push({ name: "home" });
+              }
+            })
+            .catch(() => {
+              this.alert_data.text = this.$store.getters.errorMessages;
+              this.alert_data.type = "error";
+              this.alert_data.status = true;
+              return;
+            });
         } catch (err) {
           console.log(err);
         }

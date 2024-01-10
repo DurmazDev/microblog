@@ -67,7 +67,7 @@ def LoginView():
 
     user = UserModel.objects(email=values["email"], deleted_at=None).first()
     if not user:
-        return {"error": "User not found."}, 404
+        return {"error": "Wrong email or password."}, 401
 
     user_data = user_schema.dump(user)
 

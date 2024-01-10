@@ -26,14 +26,6 @@
               About
             </RouterLink>
           </li>
-          <li>
-            <RouterLink
-              to="/privacy-policy"
-              class="hover:underline me-4 md:me-6"
-            >
-              Privacy Policy
-            </RouterLink>
-          </li>
         </ul>
       </div>
       <hr class="my-6 border-gray-200 sm:mx-auto lg:my-8" />

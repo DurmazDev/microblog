@@ -1,5 +1,12 @@
 <template>
-  <section class="bg-gray-50">
+  <LoadingComponent
+    v-if="isLoading"
+    class="flex justify-center"
+  />
+  <section
+    v-else
+    class="bg-gray-50"
+  >
     <div
       class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0"
     >
@@ -24,9 +31,9 @@
           </h1>
           <AlertComponent
             @close="handleCloseAlert"
-            :show-alert="alert_data.status"
-            :message="alert_data.message.text"
-            :type="alert_data.message.type"
+            :message="this.alert_data.text"
+            :type="this.alert_data.type"
+            :show-alert="this.alert_data.status"
           />
           <form class="space-y-4 md:space-y-6">
             <div>
@@ -95,36 +102,31 @@
 
 <script>
   import { RouterLink } from "vue-router";
-  import useFetch from "@/hooks/useFetch";
+  import { LOGIN } from "@/stores/auth.module";
   import AlertComponent from "@/components/AlertComponent.vue";
+  import LoadingComponent from "../LoadingComponent.vue";
 
   export default {
     name: "LoginComponent",
-    components: { RouterLink, AlertComponent },
+    components: { RouterLink, AlertComponent, LoadingComponent },
     mounted() {
-      if (localStorage.getItem("token")) {
+      if (this.$store.getters.isAuthenticated) {
         this.$router.push({ name: "home" });
       }
     },
     data() {
       return {
-        status: {
-          number: null,
-          message: null,
-        },
+        isLoading: false,
         alert_data: {
           status: false,
-          message: {
-            text: null,
-            type: "error",
-            required: true,
-          },
+          text: null,
+          type: "error",
         },
-        error_message: "",
       };
     },
     methods: {
-      async login(e) {
+      login(e) {
+        this.isLoading = true;
         e.preventDefault();
         try {
           if (!this.email || !this.password) {
@@ -133,36 +135,26 @@
             this.alert_data.status = true;
             return;
           }
-          const { data, error } = await useFetch("auth/login", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
+          this.$store
+            .dispatch(LOGIN, {
               email: this.email,
               password: this.password,
-            }),
-          });
-
-          if (error.value) {
-            this.error_message = error.value;
-            this.alert_data.message = error.value;
-            this.alert_data.status = true;
-            return;
-          }
-          if (!data) {
-            this.error_message = "Something went wrong.";
-            this.alert_data.message = "Something went wrong.";
-            this.alert_data.status = true;
-            return;
-          }
-
-          localStorage.setItem("token", data.value.token);
-          // store.commit("authenticate", data.value.user);
-          this.$router.push({ name: "home" });
+            })
+            .then((response) => {
+              if (response.status !== 500) {
+                this.$router.push({ name: "home" });
+              }
+            })
+            .catch(() => {
+              this.alert_data.text = this.$store.getters.errorMessages;
+              this.alert_data.type = "error";
+              this.alert_data.status = true;
+              return;
+            });
         } catch (error) {
           console.log(error);
         }
+        this.isLoading = false;
       },
       handleCloseAlert() {
         this.alert_data.status = false;

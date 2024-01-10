@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="showAlert"
-    :class="`flex justify-between p-4 mb-4 text-sm border rounded-lg text-${setColor()}-800 border-${setColor()}-300 bg-${setColor()}-50`"
+    :class="`flex justify-between p-4 mb-4 text-sm border rounded-lg text-${selectedColor}-800 border-${selectedColor}-300 bg-${selectedColor}-50`"
     role="alert"
   >
     <div class="flex">
@@ -34,25 +34,27 @@
 <script>
   export default {
     props: {
+      type: {
+        type: String,
+        default: "error", // Allowed: success, error, warning, info
+        required: true,
+      },
       showAlert: {
         type: Boolean,
         required: true,
       },
-      type: {
-        type: String,
-        default: "info", // Allowed: success, error, warning, info
-        required: true,
-      },
       message: {
         type: String,
-        default: "Something went wrong!",
         required: true,
       },
     },
     data() {
       return {
-        color: this.type,
+        selectedColor: "blue",
       };
+    },
+    mounted() {
+      this.setColor();
     },
     methods: {
       closeAlert() {
@@ -69,7 +71,7 @@
         } else {
           color = "blue";
         }
-        return color;
+        this.selectedColor = color;
       },
     },
   };

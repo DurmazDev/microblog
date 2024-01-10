@@ -1,5 +1,7 @@
 <template>
-  <HeaderComponent />
+  <HeaderComponent
+    :auth="this.$store.getters.isAuthenticated === true ? true : false"
+  />
   <div class="max-w-7xl sm:w-auto mx-auto">
     <RouterView />
   </div>
