@@ -1,13 +1,13 @@
 import axios from "axios";
 import jwtService from "@/services/jwt.service";
 
-const api = axios.create({
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
 const InitApiService = (apiUrl) => {
+  const api = axios.create({
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
   api.defaults.baseURL = apiUrl;
   api.interceptors.request.use(
     (config) => {
@@ -21,6 +21,7 @@ const InitApiService = (apiUrl) => {
       return Promise.reject(error);
     }
   );
+  return api;
 };
 
-export { InitApiService, api };
+export { InitApiService };

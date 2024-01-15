@@ -1,24 +1,36 @@
 import "./assets/main.css";
+import "vue-toastify/index.css";
 
-import { createApp } from "vue";
+import * as Vue from "vue";
 import { createPinia } from "pinia";
+import plugin from "vue-toastify";
 
 import App from "./App.vue";
 
 import router from "@/router";
 import config from "@/config";
 import store from "@/stores";
+
+import VueAxios from "vue-axios";
 import { InitApiService } from "./services/api.service";
 
-const app = createApp(App);
+const app = Vue.createApp(App);
+const api = InitApiService(config.apiUrl);
+app.use(VueAxios, api);
 
 app.provide("config", config);
 app.use(createPinia());
+app.use(plugin, {
+  errorDuration: 3000,
+  warningInfoDuration: 3000,
+  successDuration: 3000,
+});
 
 router.beforeEach((to, from, next) => {
-  if (config.PUBLIC_ROUTES.includes(to.name)) {
-    next();
-  } else if (!store.getters.isAuthenticated) {
+  if (
+    config.PROTECTED_ROUTES.includes(to.path) &&
+    !store.getters.isAuthenticated
+  ) {
     router.push({ name: "login" });
   } else {
     next();
@@ -27,7 +39,5 @@ router.beforeEach((to, from, next) => {
 
 app.use(router);
 app.use(store);
-
-InitApiService(config.apiUrl);
 
 app.mount("#app");

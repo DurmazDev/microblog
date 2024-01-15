@@ -1,5 +1,6 @@
 import JwtService from "@/services/jwt.service";
-import { api } from "@/services/api.service";
+import config from "@/config";
+import { InitApiService } from "@/services/api.service";
 
 export const LOGIN = "login";
 export const REGISTER = "register";
@@ -8,6 +9,9 @@ export const SET_AUTH = "setAuth";
 export const SET_ERROR = "setError";
 export const SET_USER = "setUser";
 export const UNSET_AUTH = "unsetAuth";
+
+// WARN(ahmet): This is a workaround for the circular dependency issue.
+const api = InitApiService(config.apiUrl);
 
 const state = {
   errors: null,
@@ -32,19 +36,18 @@ const mutations = {
     state.errors = error;
   },
   [SET_AUTH](state, auth_data) {
-    state.isAuthenticated = true;
     state.errors = {};
     state.user = auth_data.user;
     JwtService.saveToken(auth_data.token);
+    state.isAuthenticated = true;
   },
   [SET_USER](state, user) {
     state.user = user;
   },
   [UNSET_AUTH](state) {
-    state.isAuthenticated = false;
     state.user = {};
     JwtService.removeToken();
-    api.defaults.headers.common["Authorization"] = null;
+    state.isAuthenticated = false;
   },
 };
 
@@ -61,7 +64,6 @@ const actions = {
         data: JSON.stringify(body),
       })
         .then((response) => {
-          console.log(response.data.token);
           store.commit("setAuth", {
             user: response.data.user,
             token: response.data.token,
@@ -91,26 +93,33 @@ const actions = {
         data: JSON.stringify(body),
       })
         .then((response) => {
-          store.commit("setAuth", response.data.user, response.data.token);
+          store.commit("setAuth", {
+            user: response.data.user,
+            token: response.data.token,
+          });
           resolve(response);
         })
         .catch((err) => {
-          store.commit("setError", err);
+          store.commit("setError", err.response.data.error);
           reject(err);
         });
     });
   },
   logout(store) {
     return new Promise((resolve, reject) => {
-      store.commit("unsetAuth");
       api({
         method: "DELETE",
         url: "auth/logout",
+        headers: {
+          Authorization: `Bearer ${JwtService.getToken()}`,
+        },
       })
         .then((response) => {
+          store.commit("unsetAuth");
           resolve(response);
         })
         .catch((err) => {
+          store.commit("unsetAuth");
           store.commit("setError", err);
           reject(err);
         });

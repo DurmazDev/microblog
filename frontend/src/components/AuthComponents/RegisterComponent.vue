@@ -30,12 +30,6 @@
           >
             Create and account
           </h1>
-          <AlertComponent
-            @close="handleCloseAlert"
-            :message="this.alert_data.text"
-            :type="this.alert_data.type"
-            :show-alert="this.alert_data.status"
-          />
           <form class="space-y-4 md:space-y-6">
             <div>
               <label
@@ -146,15 +140,16 @@
   </section>
 </template>
 <script>
-  import AlertComponent from "@/components/AlertComponent.vue";
-  import { RouterLink } from "vue-router";
+  import LoadingComponent from "../LoadingComponent.vue";
   import { REGISTER } from "@/stores/auth.module";
+  import { RouterLink } from "vue-router";
+  import { useToast } from "vue-toastify";
 
   export default {
     name: "RegisterView",
     components: {
       RouterLink,
-      AlertComponent,
+      LoadingComponent,
     },
     mounted() {
       if (this.$store.getters.isAuthenticated) {
@@ -169,28 +164,31 @@
         confirmPassword: null,
         terms: false,
         isLoading: false,
-        alert_data: {
-          status: false,
-          text: null,
-          type: "error",
-        },
       };
     },
     methods: {
       register(e) {
         this.isLoading = true;
         e.preventDefault();
+        if (
+          !this.email ||
+          !this.name ||
+          !this.password ||
+          !this.confirmPassword
+        ) {
+          useToast().error("Please fill in all fields.");
+          this.isLoading = false;
+          return;
+        }
         try {
-          this.alert_data.status = false;
           if (!this.terms) {
-            this.alert_data.message =
-              "You must accept the terms and conditions.";
-            this.alert_data.status = true;
+            useToast().error("You must accept the terms and conditions.");
+            this.isLoading = false;
             return;
           }
           if (this.password !== this.confirmPassword) {
-            this.alert_data.message = "Passwords do not match.";
-            this.alert_data.status = true;
+            useToast().error("Passwords do not match.");
+            this.isLoading = false;
             return;
           }
           this.$store
@@ -200,22 +198,18 @@
               password: this.password,
             })
             .then((response) => {
-              if (response.status !== 500) {
+              if (response.status >= 200 && response.status < 300) {
                 this.$router.push({ name: "home" });
               }
             })
-            .catch(() => {
-              this.alert_data.text = this.$store.getters.errorMessages;
-              this.alert_data.type = "error";
-              this.alert_data.status = true;
-              return;
+            .catch((err) => {
+              useToast().error(err.response.data.error);
+              this.isLoading = false;
             });
         } catch (err) {
-          console.log(err);
+          useToast().error("An error occurred. Please try again later.");
+          this.isLoading = false;
         }
-      },
-      handleCloseAlert() {
-        this.alert_data.status = false;
       },
     },
   };

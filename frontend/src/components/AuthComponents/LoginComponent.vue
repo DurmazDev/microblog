@@ -29,19 +29,20 @@
           >
             Sign in to your account
           </h1>
-          <AlertComponent
+          <!-- <AlertComponent
             @close="handleCloseAlert"
             :message="this.alert_data.text"
             :type="this.alert_data.type"
             :show-alert="this.alert_data.status"
-          />
+          /> -->
           <form class="space-y-4 md:space-y-6">
             <div>
               <label
                 for="email"
                 class="block mb-2 text-sm font-medium text-gray-900"
-                >Your email</label
               >
+                Your email
+              </label>
               <input
                 @change="this.email = $event.target.value"
                 type="email"
@@ -103,12 +104,12 @@
 <script>
   import { RouterLink } from "vue-router";
   import { LOGIN } from "@/stores/auth.module";
-  import AlertComponent from "@/components/AlertComponent.vue";
+  import { useToast } from "vue-toastify";
   import LoadingComponent from "../LoadingComponent.vue";
 
   export default {
     name: "LoginComponent",
-    components: { RouterLink, AlertComponent, LoadingComponent },
+    components: { RouterLink, LoadingComponent },
     mounted() {
       if (this.$store.getters.isAuthenticated) {
         this.$router.push({ name: "home" });
@@ -117,11 +118,6 @@
     data() {
       return {
         isLoading: false,
-        alert_data: {
-          status: false,
-          text: null,
-          type: "error",
-        },
       };
     },
     methods: {
@@ -130,9 +126,7 @@
         e.preventDefault();
         try {
           if (!this.email || !this.password) {
-            this.alert_data.message.text = "Please fill all fields.";
-            this.alert_data.message.type = "error";
-            this.alert_data.status = true;
+            useToast().warning("Please fill all fields.");
             return;
           }
           this.$store
@@ -141,23 +135,18 @@
               password: this.password,
             })
             .then((response) => {
-              if (response.status !== 500) {
+              if (response.status >= 200 && response.status < 300) {
                 this.$router.push({ name: "home" });
               }
             })
             .catch(() => {
-              this.alert_data.text = this.$store.getters.errorMessages;
-              this.alert_data.type = "error";
-              this.alert_data.status = true;
+              useToast().error(this.$store.getters.errorMessages);
               return;
             });
         } catch (error) {
-          console.log(error);
+          useToast().error("An error occurred. Please try again later.");
         }
         this.isLoading = false;
-      },
-      handleCloseAlert() {
-        this.alert_data.status = false;
       },
     },
   };
