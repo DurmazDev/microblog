@@ -1,11 +1,12 @@
 from flask_restful import Resource, request
 from bson import ObjectId
+from marshmallow import fields
 from app.models.post import PostModel
 from app.schemas.post import post_schema, PostSchema
 from app.models.user import UserModel
 from app.models.comment import CommentModel
 from app.schemas.comment import comment_schema
-from app.config import DOMAIN_ROOT, DOMAIN_ROOT
+from app.config import FRONTEND_ROOT
 from app.middleware.auth import auth_required
 
 
@@ -26,12 +27,23 @@ class ShowPostResource(Resource):
             post = PostModel.objects(id=id, deleted_at=None).first()
         else:
             url = (
-                "http://" + DOMAIN_ROOT + "/post/" + id
+                "http://" + FRONTEND_ROOT + "/post/" + id
             )  # WARN(ahmet): in prod, we need more s'es, (https)
             post = PostModel.objects(url=url, deleted_at=None).first()
 
+        if not post:
+            return {"error": "Post not found"}, 404
         comments = CommentModel.objects.filter(id__in=post.comments)
         comments = comment_schema.dump(comments, many=True)
+
+        if not comments:
+            comments = []
+
+        author = UserModel.objects(id=post.author, deleted_at=None).first()
+        if not author:
+            author = {"id": None, "name": "Deleted User"}
+
+        post.author = author
         post.comments = comments
         return post_schema.dump(post)
 
@@ -62,7 +74,8 @@ class PostResource(Resource):
 
         if not posts:
             return {"error": "No post found."}, 404
-
+        for obj in posts:
+            obj.author = {"id": request.user["id"], "name": request.user["name"]}
         return PostSchema(exclude=excluded_fields).dump(posts, many=True)
 
     @auth_required
@@ -143,4 +156,4 @@ class PostResource(Resource):
             return {"error": "You are not authorized for this event."}, 401
 
         post.soft_delete()
-        return 204
+        return {}, 204

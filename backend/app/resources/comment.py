@@ -58,7 +58,10 @@ class CommentResource(Resource):
 
         post.comments.append(created_comment.id)
         post.save()
-        return {"message": "Comment successfully created."}, 201
+        return {
+            "comment_id": str(created_comment.id),
+            "message": "Comment successfully created.",
+        }, 201
 
     @auth_required
     def put(self, id):
@@ -101,9 +104,9 @@ class CommentResource(Resource):
 
         post = PostModel.objects(id=comment["post_id"], deleted_at=None).first()
         if not post:
-            return 204
+            return {}, 204
 
         post.comments.remove(comment.id)
         post.save()
         comment.soft_delete()
-        return 204
+        return {}, 204

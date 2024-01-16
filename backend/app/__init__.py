@@ -8,10 +8,10 @@ from mongoengine import (
     DoesNotExist,
 )
 from marshmallow import ValidationError as MMW_ValidationError
-from app.config import Config, LOGGING_CONFIG
-from logging.config import dictConfig
-import redis
+from app.config import Config
 from datetime import timedelta
+import redis
+import logging
 
 from app.resources.root import RootResource
 from app.resources.user import UserResource
@@ -21,6 +21,7 @@ from app.resources.vote import VoteResource
 from app.resources.comment import CommentResource
 from app.resources.auth import LoginView, RegisterView, LogOutView, RefreshView
 
+logging.basicConfig(filename="app/log/flask-debug.log", level=logging.DEBUG)
 app = Flask(__name__)
 api = Api(app)
 app.config.from_object(Config)
@@ -35,7 +36,6 @@ app.config["jwt_redis_blocklist"] = redis.StrictRedis(
     decode_responses=True,
 )
 
-dictConfig(LOGGING_CONFIG)
 connect(host=Config.MONGODB_SETTINGS["host"])
 
 
