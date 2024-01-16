@@ -8,7 +8,6 @@ class Config:
 
 
 DOMAIN_ROOT = Config.HOST + ":" + str(Config.PORT)
-FRONTEND_ROOT = "localhost:5173"
 SECRET_KEY = "usmanim_nereye_gidersin_youtu.be/0ZPg9GwExFg"
 JWT_ALGORITHM = "HS256"
 ALLOWED_TAGS = [
