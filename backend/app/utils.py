@@ -1,7 +1,72 @@
-from app.config import SECRET_KEY
+from flask_restful import current_app
+from app.config import SECRET_KEY, MAX_BLOCKED_USER, JWT_ALGORITHM
 from datetime import datetime, timedelta
 import math
 import jwt
+
+
+class LogOutBlockList:
+    """
+    A class to manage blocked users.
+
+    Attributes
+    ----------
+    blocked_users: List[User]
+        List of blocked users.
+
+    Methods
+    -------
+    block_user(user_id: str, token: str)
+        Adds a user to the blocked users list.
+    sync_redis()
+        Syncs blocked users to Redis.
+    check_token(user_id: str, token: str)
+        Checks if a user is blocked.
+    """
+
+    class User:
+        def __init__(self, id: str, token: str):
+            self.id = id
+            self.token = token
+            self.expire_at = current_app.config["REDIS_TOKEN_EXPIRES"]
+            self.created_at = datetime.utcnow()
+
+    def __init__(self, blocked_users: list = []):
+        self.blocked_users = blocked_users
+
+    def block_user(self, user_id: str, token: str):
+        # Check blocked_users if user is already blocked
+        blocked_user = list(
+            filter(lambda blocked_user: blocked_user.id == user_id, self.blocked_users)
+        )
+        if len(blocked_user) == 0:
+            self.blocked_users.append(self.User(id=user_id, token=token))
+        else:
+            blocked_user[0].token = token
+
+    # This method called every hour.
+    def sync_redis(self, redis_connection):
+        for user in self.blocked_users:
+            if datetime.utcnow() > user.expire_at + user.created_at:
+                self.blocked_users.remove(user)
+            else:
+                redis_connection.set(user.id, user.token)
+
+        # Set max number to avoid memory problems.
+        if len(self.blocked_users) == MAX_BLOCKED_USER:
+            self.blocked_users = []
+
+    def check_token(self, user_id, token):
+        blocked_user = list(
+            filter(lambda blocked_user: blocked_user.id == user_id, self.blocked_users)
+        )
+        if len(blocked_user) == 0:
+            logout_query = current_app.config["jwt_redis_blocklist"].get(user_id)
+            if logout_query is not None and logout_query == token:
+                return True
+            return False
+        else:
+            return blocked_user[0].token == token
 
 
 def create_token(data: object):
@@ -22,6 +87,21 @@ def create_token(data: object):
         SECRET_KEY,
         algorithm="HS256",
     )
+
+def decode_token(token: str):
+    """
+    Decodes JWT token.
+
+    Parameters
+    ---------
+    token: str
+
+    Returns
+    ---------
+    dict
+        Decoded token.
+    """
+    return jwt.decode(token, SECRET_KEY, algorithms=[JWT_ALGORITHM])
 
 
 def paginate_query(query, page: int, limit: int, schema, sort: [str] = []):

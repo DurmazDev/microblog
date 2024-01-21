@@ -19,7 +19,6 @@ class FeedResource(Resource):
     """
 
     def get(self):
-        current_app.logger.debug("GET /feed")
         page = request.args.get("page", 1, type=int)
         limit = request.args.get("limit", 50, type=int)
         sort_vote = request.args.get("vote", None, type=str)

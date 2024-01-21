@@ -46,8 +46,9 @@ class CommentResource(Resource):
         if errors:
             return {"error": "Unallowed attribute."}, 400
 
-        post = PostModel.objects(id=values["post_id"], deleted_at=None).first()
-        if not post:
+        try:
+            post = PostModel.objects(id=values["post_id"], deleted_at=None).get()
+        except PostModel.DoesNotExist:
             return {"error": "Post not found."}, 404
 
         created_comment = CommentModel(
@@ -76,8 +77,9 @@ class CommentResource(Resource):
         """
         values = request.get_json()
         data = comment_schema.load(values)
-        comment = CommentModel.objects(id=id, deleted_at=None).first()
-        if not comment:
+        try:
+            comment = CommentModel.objects(id=id, deleted_at=None).get()
+        except CommentModel.DoesNotExist:
             return {"error": "Comment not found"}, 404
         if comment.author.id != ObjectId(request.user["id"]):
             return {"error": "You are not authorized for this event."}, 401
@@ -98,12 +100,15 @@ class CommentResource(Resource):
         Returns:
             int: HTTP status code 204 for successful deletion or error message
         """
-        comment = CommentModel.objects(
-            id=id, author__id=request.user["id"], deleted_at=None
-        ).first()
-
-        post = PostModel.objects(id=comment["post_id"], deleted_at=None).first()
-        if not post:
+        try:
+            comment = CommentModel.objects(
+                id=id, author__id=request.user["id"], deleted_at=None
+            ).get()
+        except CommentModel.DoesNotExist:
+            pass
+        try:
+            post = PostModel.objects(id=comment["post_id"], deleted_at=None).get()
+        except PostModel.DoesNotExist:
             return {}, 204
 
         post.comments.remove(comment.id)

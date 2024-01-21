@@ -1,6 +1,8 @@
 from flask import Flask
 from flask_restful import Api
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from mongoengine import (
     connect,
     NotUniqueError,
@@ -8,8 +10,10 @@ from mongoengine import (
     DoesNotExist,
 )
 from marshmallow import ValidationError as MMW_ValidationError
-from app.config import Config
+from app.config import REDIS_SYNC_INTERVAL, REDIS_SETTINGS, REDIS_URI, MONGODB_SETTINGS
+from app.utils import LogOutBlockList
 from datetime import timedelta
+from apscheduler.schedulers.background import BackgroundScheduler
 import redis
 import logging
 
@@ -24,19 +28,30 @@ from app.resources.auth import LoginView, RegisterView, LogOutView, RefreshView
 logging.basicConfig(filename="app/log/flask-debug.log", level=logging.DEBUG)
 app = Flask(__name__)
 api = Api(app)
-app.config.from_object(Config)
-app.config["REDIS_TOKEN_EXPIRES"] = timedelta(days=1)
 
 CORS(app=app)
 
+app.config["REDIS_TOKEN_EXPIRES"] = timedelta(days=1)
+app.config["BLOCKED_USERS"] = []
 app.config["jwt_redis_blocklist"] = redis.StrictRedis(
-    host=Config.REDIS_SETTINGS["host"],
-    port=Config.REDIS_SETTINGS["port"],
-    db=Config.REDIS_SETTINGS["db"],
+    host=REDIS_SETTINGS["host"],
+    port=REDIS_SETTINGS["port"],
+    db=REDIS_SETTINGS["db"],
     decode_responses=True,
 )
+app.config["logout_blocklist"] = LogOutBlockList(app.config["BLOCKED_USERS"])
 
-connect(host=Config.MONGODB_SETTINGS["host"])
+scheduler = BackgroundScheduler()
+# Scheduler runs sync_redis twice when use_reload=True or DEBUG=True.
+scheduler.add_job(
+    app.config["logout_blocklist"].sync_redis,
+    "interval",
+    minutes=REDIS_SYNC_INTERVAL,
+    args=[app.config["jwt_redis_blocklist"]],
+)
+scheduler.start()
+
+connect(host=MONGODB_SETTINGS["host"])
 
 
 @app.errorhandler(MMW_ValidationError)  # Marshmallow Validation Error
@@ -81,7 +96,14 @@ def handle_other_errors(error):
     return {"error": "An error occurred."}, 500
 
 
-# TODO(ahmet): Add rate limiting.
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["4000 per hour"],
+    storage_uri=REDIS_URI,
+    storage_options={"socket_connect_timeout": 30},
+    strategy="moving-window",
+)
 
 api.add_resource(RootResource, "/")
 api.add_resource(UserResource, "/user", "/user/<string:id>")

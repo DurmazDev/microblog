@@ -1,4 +1,4 @@
-from mongoengine import Document, fields, NotUniqueError
+from mongoengine import Document, fields
 from datetime import datetime
 from app.models.post import PostModel
 

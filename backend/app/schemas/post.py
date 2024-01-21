@@ -7,6 +7,7 @@ Schema.TYPE_MAPPING[ObjectId] = fields.String()
 class AuthorEmbeddedSchema(Schema):
     id = fields.String(dump_only=True)
     name = fields.String(dump_only=True)
+    vote = fields.Integer(dump_only=True, allow_none=True)
 
 
 class CommentEmbeddedSchema(Schema):
