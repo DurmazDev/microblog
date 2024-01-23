@@ -30,43 +30,35 @@ class VoteResource(Resource):
         Returns:
             JSON: Message indicating the success or failure of the vote operation.
         """
-        # NOTE(ahmet): I definitely know this block could be more better...
         values = request.get_json()
         errors = vote_schema.validate(values)
         if errors:
             return {"error": "Unallowed attribute."}, 400
 
         if values["vote_value"] > 1 or values["vote_value"] < -1:
-            return {"error": "Unallowed attribute."}, 400
+            return {"error": "Unallowed vote value."}, 400
 
-        post = PostModel.objects(id=values["post_id"], deleted_at=None).first()
-        if not post:
+        try:
+            post = PostModel.objects(id=values["post_id"], deleted_at=None).get()
+        except PostModel.DoesNotExist:
             return {"error": "Post not found."}, 404
 
-        recent_vote = VoteModel(author=request.user["id"], post_id=values["post_id"])
+        try:
+            recent_vote = VoteModel.objects(
+                author=request.user["id"], post_id=values["post_id"]
+            ).get()
+            if recent_vote:
+                if recent_vote.vote_value == values["vote_value"]:
+                    return {"message": "You have already voted for this."}, 202
 
-        if recent_vote:
-            if values["vote_value"] == 0:
-                if recent_vote.vote_value == -1:
-                    post.vote += 1
-                elif recent_vote.vote_value == 1:
-                    post.vote -= 1
-
-                recent_vote.delete()
+                post.vote += (-1) * recent_vote.vote_value
+                post.vote += values["vote_value"]
+                recent_vote.vote_value = values["vote_value"]
+                recent_vote.save()
                 post.save()
                 return {"message": "Vote saved successfully."}, 201
-
-            if recent_vote.vote_value == values["vote_value"]:
-                return {"message": "Vote saved successfully."}, 201
-
-            recent_vote.vote_value = values["vote_value"]
-            recent_vote.save()
-            if post.vote + recent_vote.vote_value == 0:
-                post.vote = recent_vote.vote_value
-            else:
-                post.vote += recent_vote.vote_value
-            post.save()
-            return {"message": "Vote saved successfully."}, 201
+        except VoteModel.DoesNotExist:
+            pass
 
         if values["vote_value"] == 0:
             return {"error": "You cannot cast a blank vote."}, 400

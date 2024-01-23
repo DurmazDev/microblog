@@ -68,8 +68,17 @@
           });
       },
       updateVote({ voteChange }) {
+        let temp_vote = voteChange;
+        if (this.article.vote + voteChange === 0 && voteChange !== 0) {
+          if (voteChange === 1) voteChange += 1;
+          else if (voteChange === -1) voteChange -= 1;
+        }
         this.article = {
           ...this.article,
+          author: {
+            ...this.article.author,
+            vote: temp_vote,
+          },
           vote: this.article.vote + voteChange,
         };
       },

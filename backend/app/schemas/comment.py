@@ -19,7 +19,7 @@ class CommentSchema(Schema):
     deleted_at = fields.DateTime(dump_only=True)
 
     class Meta:
-        exclude = ["deleted_at", "created_at", "updated_at"]
+        exclude = ["deleted_at", "updated_at"]
 
 
 comment_schema = CommentSchema()

@@ -1,11 +1,13 @@
 from flask_restful import Resource, request
 from bson import ObjectId
+from app.utils import decode_token
 from app.models.post import PostModel
 from app.schemas.post import post_schema, PostSchema
 from app.models.user import UserModel
 from app.models.comment import CommentModel
 from app.schemas.comment import comment_schema
-from app.config import DOMAIN_ROOT, DOMAIN_ROOT
+from app.models.vote import VoteModel
+from app.config import FRONTEND_ROOT
 from app.middleware.auth import auth_required
 
 
@@ -22,16 +24,43 @@ class ShowPostResource(Resource):
     """
 
     def get(self, id):
-        if ObjectId.is_valid(id):
-            post = PostModel.objects(id=id, deleted_at=None).first()
-        else:
-            url = (
-                "http://" + DOMAIN_ROOT + "/post/" + id
-            )  # WARN(ahmet): in prod, we need more s'es, (https)
-            post = PostModel.objects(url=url, deleted_at=None).first()
+        try:
+            if ObjectId.is_valid(id):
+                post = PostModel.objects(id=id, deleted_at=None).get()
 
+            else:
+                url = (
+                    "http://" + FRONTEND_ROOT + "/post/" + id
+                )  # WARN(ahmet): in prod, we need more s'es, (https)
+                post = PostModel.objects(url=url, deleted_at=None).get()
+        except PostModel.DoesNotExist:
+            return {"error": "Post not found"}, 404
         comments = CommentModel.objects.filter(id__in=post.comments)
         comments = comment_schema.dump(comments, many=True)
+
+        if not comments:
+            comments = []
+
+        try:
+            author = UserModel.objects(id=post.author, deleted_at=None).get()
+        except UserModel.DoesNotExist:
+            author = {"id": None, "name": "Deleted User"}
+            pass
+
+        if request.headers.get("Authorization"):
+            decoded_token = decode_token(
+                request.headers.get("Authorization").split(" ")[-1]
+            )
+            try:
+                recent_vote = VoteModel.objects(
+                    author=decoded_token["id"], post_id=post.id
+                ).get()
+                if recent_vote:
+                    setattr(author, "vote", recent_vote.vote_value)
+            except VoteModel.DoesNotExist:
+                pass
+
+        post.author = author
         post.comments = comments
         return post_schema.dump(post)
 
@@ -62,7 +91,8 @@ class PostResource(Resource):
 
         if not posts:
             return {"error": "No post found."}, 404
-
+        for obj in posts:
+            obj.author = {"id": request.user["id"], "name": request.user["name"]}
         return PostSchema(exclude=excluded_fields).dump(posts, many=True)
 
     @auth_required
@@ -103,8 +133,9 @@ class PostResource(Resource):
         """
         values = request.get_json()
         data = post_schema.load(values)
-        post = PostModel.objects(id=id, deleted_at=None).first()
-        if not post:
+        try:
+            post = PostModel.objects(id=id, deleted_at=None).get()
+        except PostModel.DoesNotExist:
             return {"error": "User not found"}, 404
         if ObjectId(request.user["id"]) != post.author:
             return {"error": "You are not authorized for this event."}, 401
@@ -130,17 +161,19 @@ class PostResource(Resource):
         Returns:
             int: HTTP status code 204 for successful deletion.
         """
-        authenticated_user = UserModel.objects(
-            id=request.user["id"], deleted_at=None
-        ).first()
-        if not authenticated_user:
+        try:
+            authenticated_user = UserModel.objects(
+                id=request.user["id"], deleted_at=None
+            ).get()
+        except UserModel.DoesNotExist:
             return {"error": "You are not authorized for this event."}, 401
 
-        post = PostModel.objects(id=id, deleted_at=None).first()
-        if not post:
+        try:
+            post = PostModel.objects(id=id, deleted_at=None).get()
+        except PostModel.DoesNotExist:
             return {"error": "Post not found"}, 404
         if post.author != authenticated_user.id:
             return {"error": "You are not authorized for this event."}, 401
 
         post.soft_delete()
-        return 204
+        return {}, 204

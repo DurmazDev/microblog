@@ -1,12 +1,20 @@
-class Config:
-    DEBUG = True
-    PORT = 8000
-    HOST = "0.0.0.0"
-    REDIS_SETTINGS = {"host": "127.0.0.1", "port": 6379, "db": 0}
-    MONGODB_SETTINGS = {"host": "mongodb://mongo:27017/microblog"}
-
-
-DOMAIN_ROOT = Config.HOST + ":" + str(Config.PORT)
+DEBUG = False
+PORT = 8000
+HOST = "0.0.0.0"
+REDIS_SETTINGS = {"host": "microblog_redis", "port": 6379, "db": 0}
+REDIS_URI = (
+    "redis://"
+    + REDIS_SETTINGS["host"]
+    + ":"
+    + str(REDIS_SETTINGS["port"])
+    + "/"
+    + str(REDIS_SETTINGS["db"])
+)
+MONGODB_SETTINGS = {"host": "mongodb://microblog_mongo:27017/microblog"}
+REDIS_SYNC_INTERVAL = 60  # In minutes
+MAX_BLOCKED_USER = 10000
+DOMAIN_ROOT = HOST + ":" + str(PORT)
+FRONTEND_ROOT = "127.0.0.1:4173"
 SECRET_KEY = "usmanim_nereye_gidersin_youtu.be/0ZPg9GwExFg"
 JWT_ALGORITHM = "HS256"
 ALLOWED_TAGS = [

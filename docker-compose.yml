@@ -1,0 +1,37 @@
+version: "3"
+
+services:
+  mongo:
+    image: mongo
+    container_name: microblog_mongo
+    expose:
+      - "27017"
+    ports:
+      - "27017:27017"
+
+  redis:
+    image: redis
+    container_name: microblog_redis
+    expose:
+      - "6379"
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    container_name: microblog_backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo
+      - redis
+
+  frontend:
+    build: ./frontend
+    container_name: microblog_frontend
+    ports:
+      - "4173:4173"
+    depends_on:
+      - mongo
+      - redis
+      - backend

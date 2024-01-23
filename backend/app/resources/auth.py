@@ -17,9 +17,7 @@ def RefreshView():
     Returns:
         JSON: Authentication token and user data on successful refresh, or error message on authentication failure.
     """
-    current_app.config["jwt_redis_blocklist"].set(
-        request.user["id"], request.token, ex=current_app.config["REDIS_TOKEN_EXPIRES"]
-    )
+    current_app.config["logout_blocklist"].block_user(request.user["id"], request.token)
     return {
         "message": "Successfully refreshed token.",
         "token": create_token(request.user),
@@ -38,9 +36,10 @@ def LogOutView():
     Returns:
         JSON: Success message on successful logout.
     """
-    current_app.config["jwt_redis_blocklist"].set(
-        request.user["id"], request.token, ex=current_app.config["REDIS_TOKEN_EXPIRES"]
-    )
+    current_app.config["logout_blocklist"].block_user(request.user["id"], request.token)
+    # current_app.config["jwt_redis_blocklist"].set(
+    #     request.user["id"], request.token, ex=current_app.config["REDIS_TOKEN_EXPIRES"]
+    # )
     return {"message": "Successfully logged out."}, 202
 
 
@@ -65,8 +64,9 @@ def LoginView():
     if errors:
         return {"error": "Unallowed attribute."}, 400
 
-    user = UserModel.objects(email=values["email"], deleted_at=None).first()
-    if not user:
+    try:
+        user = UserModel.objects(email=values["email"], deleted_at=None).get()
+    except UserModel.DoesNotExist:
         return {"error": "Wrong email or password."}, 401
 
     user_data = user_schema.dump(user)
@@ -95,9 +95,13 @@ def RegisterView():
     if errors:
         return {"error": "Unallowed attribute."}, 400
 
-    user = UserModel.objects(email=values["email"], deleted_at=None).first()
-    if user:
-        return {"error": "User with this e-mail already exists."}, 409
+    # WARN(ahmet): maybe this should be a custom validator?
+    try:
+        user = UserModel.objects(email=values["email"], deleted_at=None).get()
+        if user:
+            return {"error": "User with this e-mail already exists."}, 409
+    except UserModel.DoesNotExist:
+        pass
 
     user = UserModel(
         name=values["name"],

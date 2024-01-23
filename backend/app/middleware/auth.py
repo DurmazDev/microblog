@@ -1,7 +1,7 @@
 from flask import request
 from flask_restful import current_app
 from functools import wraps
-from app.config import SECRET_KEY, JWT_ALGORITHM
+from app.utils import decode_token
 from bson import ObjectId
 import jwt
 
@@ -12,16 +12,21 @@ def auth_required(func):
         token = request.headers.get("Authorization")
         if not token:
             return {"error": "Token is missing"}, 401
-        token = token.split(" ")[1]
+        token = token.split(" ")[-1]
 
         try:
-            decoded_token = jwt.decode(token, SECRET_KEY, algorithms=[JWT_ALGORITHM])
+            decoded_token = decode_token(token)
             if not ObjectId.is_valid(decoded_token["id"]):
                 return {"error": "Invalid token"}, 401
-            logout_query = current_app.config["jwt_redis_blocklist"].get(
-                decoded_token["id"]
+            # logout_query = current_app.config["jwt_redis_blocklist"].get(
+            #     decoded_token["id"]
+            # )
+            # if logout_query is not None and logout_query == token:
+            #     return {"error": "Invalid token"}, 401
+            logout_query = current_app.config["logout_blocklist"].check_token(
+                decoded_token["id"], token
             )
-            if logout_query is not None and logout_query == token:
+            if logout_query:
                 return {"error": "Invalid token"}, 401
 
             request.user = decoded_token
