@@ -3,8 +3,7 @@ class Config:
     PORT = 8000
     HOST = "0.0.0.0"
     REDIS_SETTINGS = {"host": "127.0.0.1", "port": 6379, "db": 0}
-    # MONGODB_SETTINGS = {"host": "mongodb://mongo:27017/microblog"}
-    MONGODB_SETTINGS = {"host": "mongodb://127.0.0.1:27017/microblog"}
+    MONGODB_SETTINGS = {"host": "mongodb://mongo:27017/microblog"}
 
 
 DOMAIN_ROOT = Config.HOST + ":" + str(Config.PORT)

@@ -1,7 +1,7 @@
 from mongoengine import Document, fields
 from datetime import datetime
 from random import randint
-from app.config import DOMAIN_ROOT
+from app.config import FRONTEND_ROOT
 import re
 
 
@@ -29,7 +29,7 @@ class PostModel(Document):
     def create_url(self, title, created_at):
         raw_url = f"{'-'.join(title.lower().split())}-{created_at.strftime('%Y%m%d')}{randint(1000, 9999)}"
         endpoint = re.sub(r"[^a-zA-Z0-9\-]", "", raw_url)
-        return "http://" + DOMAIN_ROOT + "/post/" + endpoint
+        return "http://" + FRONTEND_ROOT + "/post/" + endpoint
 
     def soft_delete(self):
         if not self.deleted_at:
