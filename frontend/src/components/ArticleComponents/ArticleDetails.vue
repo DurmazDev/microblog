@@ -26,7 +26,10 @@
             <p>Total vote point now: {{ article.vote }}</p>
           </div>
           <button
-            class="p-6 bg-white rounded-lg border border-gray-200 shadow-md"
+            :disabled="article.author?.vote === 1"
+            :class="`p-6 rounded-lg border border-gray-200 shadow-md ${
+              article.author?.vote === 1 ? 'bg-green-400' : 'bg-white'
+            }`"
             @click="voteEvent('up')"
           >
             <div class="flex justify-between items-center mb-5 text-gray-500">
@@ -45,7 +48,10 @@
             </div>
           </button>
           <button
-            class="p-6 bg-white rounded-lg border border-gray-200 shadow-md"
+            :disabled="article.author?.vote === -1"
+            :class="`p-6 rounded-lg border border-gray-200 shadow-md ${
+              article.author?.vote === -1 ? 'bg-red-400' : 'bg-white'
+            }`"
             @click="voteEvent('down')"
           >
             <div class="flex justify-between items-center mb-5 text-gray-500">
@@ -64,6 +70,9 @@
             </div>
           </button>
         </div>
+        <p v-if="article.author?.vote">
+          Daha önce oy kullanmışsınız, seçiminiz işaretlenmiştir.
+        </p>
       </div>
     </div>
     <div class="py-8 px-4 mx-auto max-w-screen-xl lg:py-16 lg:px-6">
@@ -135,7 +144,7 @@
               Submit Comment
             </button>
           </div>
-          <div v-else>You must be logged in to post a comment.op</div>
+          <div v-else>You must be logged in to post a comment.</div>
         </div>
       </div>
     </div>

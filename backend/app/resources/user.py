@@ -20,8 +20,9 @@ class UserResource(Resource):
         Returns:
             JSON: User profile details.
         """
-        user = UserModel.objects(id=request.user["id"], deleted_at=None).first()
-        if not user:
+        try:
+            user = UserModel.objects(id=request.user["id"], deleted_at=None).get()
+        except UserModel.DoesNotExist:
             return {"error": "User not found."}, 404
         return user_schema.dump(user)
 
@@ -47,8 +48,9 @@ class UserResource(Resource):
         if request.user["id"] != id:
             return {"error": "You are not authorized for this event."}, 401
         data = user_schema.load(values)
-        user = UserModel.objects(id=id, deleted_at=None).first()
-        if not user:
+        try:
+            user = UserModel.objects(id=id, deleted_at=None).get()
+        except UserModel.DoesNotExist:
             return {"error": "User not found"}, 404
 
         for key, value in data.items():
@@ -64,10 +66,11 @@ class UserResource(Resource):
         Returns:
             JSON: Message indicating account deletion confirmation email sent.
         """
-        authenticated_user = UserModel.objects(
-            id=request.user["id"], deleted_at=None
-        ).first()
-        if not authenticated_user:
+        try:
+            authenticated_user = UserModel.objects(
+                id=request.user["id"], deleted_at=None
+            ).get()
+        except UserModel.DoesNotExist:
             return {"error": "You are not authorized for this event."}, 401
 
         # TODO(ahmet): send email for account deletion confirment
