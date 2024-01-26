@@ -18,11 +18,6 @@ def auth_required(func):
             decoded_token = decode_token(token)
             if not ObjectId.is_valid(decoded_token["id"]):
                 return {"error": "Invalid token"}, 401
-            # logout_query = current_app.config["jwt_redis_blocklist"].get(
-            #     decoded_token["id"]
-            # )
-            # if logout_query is not None and logout_query == token:
-            #     return {"error": "Invalid token"}, 401
             logout_query = current_app.config["logout_blocklist"].check_token(
                 decoded_token["id"], token
             )
@@ -33,9 +28,7 @@ def auth_required(func):
             request.token = token
         except jwt.ExpiredSignatureError:
             return {"error": "Token has expired"}, 401
-        except jwt.InvalidTokenError:
-            return {"error": "Invalid token"}, 401
-        except KeyError:
+        except jwt.PyJWTError:
             return {"error": "Invalid token"}, 401
 
         return func(*args, **kwargs)

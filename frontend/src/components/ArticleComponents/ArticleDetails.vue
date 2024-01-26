@@ -26,11 +26,12 @@
             <p>Total vote point now: {{ article.vote }}</p>
           </div>
           <button
-            :disabled="article.author?.vote === 1"
             :class="`p-6 rounded-lg border border-gray-200 shadow-md ${
               article.author?.vote === 1 ? 'bg-green-400' : 'bg-white'
             }`"
-            @click="voteEvent('up')"
+            @click="
+              article.author?.vote === 1 ? voteEvent('none') : voteEvent('up')
+            "
           >
             <div class="flex justify-between items-center mb-5 text-gray-500">
               <div>
@@ -48,11 +49,14 @@
             </div>
           </button>
           <button
-            :disabled="article.author?.vote === -1"
             :class="`p-6 rounded-lg border border-gray-200 shadow-md ${
               article.author?.vote === -1 ? 'bg-red-400' : 'bg-white'
             }`"
-            @click="voteEvent('down')"
+            @click="
+              article.author?.vote === -1
+                ? voteEvent('none')
+                : voteEvent('down')
+            "
           >
             <div class="flex justify-between items-center mb-5 text-gray-500">
               <div>
@@ -71,7 +75,7 @@
           </button>
         </div>
         <p v-if="article.author?.vote">
-          Daha önce oy kullanmışsınız, seçiminiz işaretlenmiştir.
+          You have already voted, your choice has been painted.
         </p>
       </div>
     </div>

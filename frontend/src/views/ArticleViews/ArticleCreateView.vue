@@ -1,5 +1,5 @@
 <template>
-  <p>Article Create View</p>
+  <p>Article Create</p>
   <input
     class="w-full border border-gray-300 rounded-lg px-3 py-2 mb-4 focus:outline-none focus:border-primary-600"
     placeholder="Article Title"

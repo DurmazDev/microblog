@@ -14,6 +14,9 @@ Clone the project
 
 ```
   cd microblog
+```
+
+```
   docker-compose up --build
 ```
 
@@ -51,6 +54,12 @@ Enter directory
 
 ```bash
   cd microblog/frontend/
+```
+
+Rename config.template.js to config.js and check configurations.
+
+```bash
+  mv src/config.template.js src/config.js
 ```
 
 Install Dependencies
