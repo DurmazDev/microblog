@@ -9,6 +9,7 @@ from app.schemas.comment import comment_schema
 from app.models.vote import VoteModel
 from app.config import FRONTEND_ROOT
 from app.middleware.auth import auth_required
+from jwt import PyJWTError
 
 
 class ShowPostResource(Resource):
@@ -48,10 +49,10 @@ class ShowPostResource(Resource):
             pass
 
         if request.headers.get("Authorization"):
-            decoded_token = decode_token(
-                request.headers.get("Authorization").split(" ")[-1]
-            )
             try:
+                decoded_token = decode_token(
+                    request.headers.get("Authorization").split(" ")[-1]
+                )
                 recent_vote = VoteModel.objects(
                     author=decoded_token["id"], post_id=post.id
                 ).get()
@@ -59,6 +60,8 @@ class ShowPostResource(Resource):
                     setattr(author, "vote", recent_vote.vote_value)
             except VoteModel.DoesNotExist:
                 pass
+            except PyJWTError:
+                return {"error": "Invalid token"}, 401
 
         post.author = author
         post.comments = comments

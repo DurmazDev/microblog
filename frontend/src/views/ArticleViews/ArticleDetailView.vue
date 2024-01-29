@@ -64,22 +64,21 @@
             if (error.response.status === 404)
               this.$router.push({ name: "notfound" });
             useToast().error(error.response.data.error);
-            this.isLoading = false;
           });
       },
       updateVote({ voteChange }) {
         let temp_vote = voteChange;
-        if (this.article.vote + voteChange === 0 && voteChange !== 0) {
-          if (voteChange === 1) voteChange += 1;
-          else if (voteChange === -1) voteChange -= 1;
-        }
+        let change = 0;
+        if (this.article.author.vote !== undefined)
+          change += -1 * this.article.author.vote;
+        change += voteChange;
         this.article = {
           ...this.article,
           author: {
             ...this.article.author,
             vote: temp_vote,
           },
-          vote: this.article.vote + voteChange,
+          vote: this.article.vote + change,
         };
       },
     },

@@ -25,7 +25,9 @@ from app.resources.vote import VoteResource
 from app.resources.comment import CommentResource
 from app.resources.auth import LoginView, RegisterView, LogOutView, RefreshView
 
-logging.basicConfig(filename="app/log/flask-debug.log", level=logging.DEBUG)
+logging.basicConfig(
+    filename="app/log/flask-error.log", level=logging.ERROR, filemode="a+"
+)
 app = Flask(__name__)
 api = Api(app)
 
