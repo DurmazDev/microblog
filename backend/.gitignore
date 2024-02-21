@@ -2,3 +2,4 @@ venv/
 __pycache__
 TODO.txt
 app/config.py
+pytest.ini

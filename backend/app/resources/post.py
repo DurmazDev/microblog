@@ -61,7 +61,7 @@ class ShowPostResource(Resource):
             except VoteModel.DoesNotExist:
                 pass
             except PyJWTError:
-                return {"error": "Invalid token"}, 401
+                return {"error": "Invalid token."}, 401
 
         post.author = author
         post.comments = comments
@@ -139,7 +139,7 @@ class PostResource(Resource):
         try:
             post = PostModel.objects(id=id, deleted_at=None).get()
         except PostModel.DoesNotExist:
-            return {"error": "User not found"}, 404
+            return {"error": "Post not found"}, 404
         if ObjectId(request.user["id"]) != post.author:
             return {"error": "You are not authorized for this event."}, 401
 
