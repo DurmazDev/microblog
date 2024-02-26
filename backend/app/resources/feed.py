@@ -1,4 +1,4 @@
-from flask_restful import Resource, request, current_app
+from flask_restful import Resource, request
 from app.models.post import PostModel
 from app.schemas.post import post_schema
 

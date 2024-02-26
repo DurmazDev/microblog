@@ -80,7 +80,7 @@ class CommentResource(Resource):
         try:
             comment = CommentModel.objects(id=id, deleted_at=None).get()
         except CommentModel.DoesNotExist:
-            return {"error": "Comment not found"}, 404
+            return {"error": "Comment not found."}, 404
         if comment.author.id != ObjectId(request.user["id"]):
             return {"error": "You are not authorized for this event."}, 401
 
@@ -104,8 +104,10 @@ class CommentResource(Resource):
             comment = CommentModel.objects(
                 id=id, author__id=request.user["id"], deleted_at=None
             ).get()
+            if comment.author.id != ObjectId(request.user["id"]):
+                return {"error": "You are not authorized for this event."}, 401
         except CommentModel.DoesNotExist:
-            pass
+            return {}, 204
         try:
             post = PostModel.objects(id=comment["post_id"], deleted_at=None).get()
         except PostModel.DoesNotExist:

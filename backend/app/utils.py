@@ -57,6 +57,16 @@ class LogOutBlockList:
             self.blocked_users = []
 
     def check_token(self, user_id, token):
+        """
+        Checks if the provided token is valid for the given user ID.
+
+        Parameters:
+        - user_id (ObjectID): The ObjectID of the user.
+        - token (str): The token to be checked.
+
+        Returns:
+        - bool: True if the token is valid, False otherwise.
+        """
         blocked_user = list(
             filter(lambda blocked_user: blocked_user.id == user_id, self.blocked_users)
         )
@@ -87,6 +97,7 @@ def create_token(data: object):
         SECRET_KEY,
         algorithm="HS256",
     )
+
 
 def decode_token(token: str):
     """
