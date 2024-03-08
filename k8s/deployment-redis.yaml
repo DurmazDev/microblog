@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  labels:
+    app: microblog-databases
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: microblog-databases
+  template:
+    metadata:
+      labels:
+        app: microblog-databases
+    spec:
+      containers:
+        - name: redis
+          image: redis
+          ports:
+            - containerPort: 6379
