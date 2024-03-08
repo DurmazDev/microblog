@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: microblog-frontend-deployment
+  labels:
+    app: microblog-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: microblog-frontend
+  template:
+    metadata:
+      labels:
+        app: microblog-frontend
+    spec:
+      containers:
+        - name: microblog-frontend
+          image: microblog_frontend
+          ports:
+            - containerPort: 4173
+          imagePullPolicy: Never

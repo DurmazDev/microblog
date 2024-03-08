@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: microblog-backend-deployment
+  namespace: default
+  labels:
+    app: microblog-backend
+spec:
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+      nodePort: 31647
+  selector:
+    app: microblog-backend
+  type: NodePort
