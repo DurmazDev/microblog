@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: microblog-frontend-deployment
+  namespace: default
+  labels:
+    app: microblog-frontend
+spec:
+  ports:
+    - protocol: TCP
+      port: 4173
+      targetPort: 4173
+      nodePort: 31648
+  selector:
+    app: microblog-frontend
+  type: NodePort
