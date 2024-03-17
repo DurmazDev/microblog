@@ -2,8 +2,7 @@ from flask_restful import Resource, request
 from app.models.post import PostModel
 from app.models.user import UserModel
 from app.models.tag import TagModel
-from app.schemas.post import post_schema
-from bson import ObjectId
+from app.schemas.post import PostSchema
 from app.models.tag import TagModel
 
 
@@ -32,21 +31,21 @@ class FeedResource(Resource):
 
         if sort_vote:
             if sort_vote.lower() == "asc":
-                sort_values.append(("vote", 1))
+                sort_values.append("vote")
             else:
-                sort_values.append(("vote", -1))
-        if sort_date.lower() == "asc":
-            sort_values.append(("created_at", 1))
-        else:
-            sort_values.append(("created_at", -1))
+                sort_values.append("-vote")
+        if sort_date:
+            if sort_date.lower() == "asc":
+                sort_values.append("created_at")
+            else:
+                sort_values.append("-created_at")
 
         skip = (page - 1) * limit
-
         results = (
             PostModel.objects(deleted_at=None)
-            .order_by(*[f"{field[0]}_{field[1]}" for field in sort_values])
             .skip(skip)
             .limit(limit)
+            .order_by(*sort_values)
         )
 
         author_ids = [post["author"] for post in results]
@@ -58,25 +57,28 @@ class FeedResource(Resource):
             author_name = author_data_map.get(author_id, "Anonymous")
             post["author"] = {"id": author_id, "name": author_name}
 
-        if hasattr(post, "tags") and post["tags"] is not None:
-            tag_ids = post["tags"]
-            tag_data = TagModel.objects(id__in=tag_ids, deleted_at=None).only(
-                "id", "name"
-            )
-            tag_data_map = {tag.id: tag for tag in tag_data}
+        nested_tag_ids = [post["tags"] for post in results]
+        tag_ids = []
+        [tag_ids.extend(inner_list) for inner_list in nested_tag_ids]
+        tag_data = TagModel.objects(id__in=tag_ids).only("id", "name")
+        tag_data_map = {tag["id"]: tag["name"] for tag in tag_data}
 
-            for i, tag_id in enumerate(tag_ids):
-                tag = tag_data_map.get(tag_id)
-                if tag is None:
-                    tag = {"id": ObjectId(), "name": "Deleted Tag"}
-                post["tags"][i] = tag
+        for post in results:
+            post_tag_ids = post["tags"]
+            temp_tags = []
+            for id in post_tag_ids:
+                tag_name = tag_data_map.get(id, "Unknown")
+                temp_tags.append({"id": id, "name": tag_name})
+            post["tags"] = temp_tags
 
         total_count = PostModel.objects(deleted_at=None).count()
         total_pages = (total_count + limit - 1) // limit
 
+        feed_schema = PostSchema(exclude=("deleted_at", "comments"))
+
         if results:
             return {
-                "results": post_schema.dump(results, many=True),
+                "results": feed_schema.dump(results, many=True),
                 "pagination": {
                     "current_page": page,
                     "next_page": None if page == total_pages else page + 1,
