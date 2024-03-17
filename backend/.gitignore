@@ -3,3 +3,4 @@ __pycache__
 TODO.txt
 app/config.py
 pytest.ini
+./.coverage

@@ -11,6 +11,7 @@ class PostModel(Document):
     content = fields.StringField(required=True)
     vote = fields.IntField(default=0, required=True)
     comments = fields.ListField(fields.ObjectIdField(), default=[])
+    tags = fields.ListField(fields.ObjectIdField(), default=[])
     url = fields.StringField(required=True)
     created_at = fields.DateTimeField(required=True)
     updated_at = fields.DateTimeField(required=True)
