@@ -26,6 +26,7 @@ class FeedResource(Resource):
         limit = request.args.get("limit", 50, type=int)
         sort_vote = request.args.get("vote", None, type=str)
         sort_date = request.args.get("date", "desc", type=str)
+        sort_tag = request.args.get("tag", None, type=str)
 
         sort_values = []
 
@@ -62,6 +63,16 @@ class FeedResource(Resource):
         [tag_ids.extend(inner_list) for inner_list in nested_tag_ids]
         tag_data = TagModel.objects(id__in=tag_ids).only("id", "name")
         tag_data_map = {tag["id"]: tag["name"] for tag in tag_data}
+
+        if sort_tag and sort_tag in tag_data_map.values():
+            new_results = []
+            outher_results = []
+            for post in results:
+                if sort_tag in [tag_data_map[tag] for tag in post["tags"]]:
+                    new_results.append(post)
+                else:
+                    outher_results.append(post)
+            results = new_results + outher_results
 
         for post in results:
             post_tag_ids = post["tags"]

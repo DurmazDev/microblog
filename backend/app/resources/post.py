@@ -1,5 +1,6 @@
 from flask_restful import Resource, request
 from bson import ObjectId
+from marshmallow import fields
 from app.utils import decode_token
 from app.models.post import PostModel
 from app.models.user import UserModel
@@ -121,14 +122,30 @@ class PostResource(Resource):
         """
         values = request.get_json()
         errors = post_schema.validate(values)
+        tag_ids = None
         if errors:
-            return {"error": "Unallowed attribute."}, 400
+            if (
+                errors.get("tags")
+                and isinstance(values["tags"], list)
+                and all(ObjectId.is_valid(item) for item in values["tags"])
+            ):
+                tag_ids = list(set(values["tags"]))
+                tags = TagModel.objects(id__in=tag_ids, deleted_at=None)
+                if len(tags) != len(tag_ids):
+                    return {"error": "Invalid tag id."}, 400
+            else:
+                return {"error": "Unallowed attribute."}, 400
 
         created_post = PostModel(
             title=values["title"],
             author=request.user["id"],
             content=values["content"],
-        ).save()
+        )
+
+        if tag_ids:
+            created_post.tags = tag_ids
+
+        created_post.save()
 
         return {
             "message": "Post created successfully.",
