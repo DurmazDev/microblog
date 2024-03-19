@@ -11,6 +11,14 @@
           class="mb-4 text-left"
           v-html="renderHTML(article.content)"
         ></div>
+        <div class="flex justify-center">
+          <TagButton
+            :v-if="article.tags"
+            v-for="(tag, index) in article.tags"
+            :key="index"
+            :tag="tag.name"
+          />
+        </div>
         <p class="mb-4 text-lg font-light text-gray-500">
           Creator of this content: {{ article.author?.name }}
         </p>
@@ -157,9 +165,13 @@
 
 <script>
   import { useToast } from "vue-toastify";
+  import TagButton from "../TagButtonComponent.vue";
 
   export default {
     name: "ArticleDetailView",
+    components: {
+      TagButton,
+    },
     props: {
       article: {
         type: Object,

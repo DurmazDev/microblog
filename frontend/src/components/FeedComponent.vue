@@ -23,7 +23,6 @@
 
   export default {
     components: { LoadingComponent, ArticleGrid, PaginationComponents },
-
     data() {
       return {
         post_list: [],
@@ -41,15 +40,15 @@
         this.isLoading = true;
         let endpoint = "feed";
         const query_params = [];
-        const params = new URLSearchParams(
-          window.location.search.substring(1)
-        );
 
-        if (params.has("page")) {
-          query_params.push("page=" + params.get("page"));
+        if (this.$route.query.page) {
+          query_params.push("page=" + this.$route.query.page);
         }
-        if (params.has("limit")) {
-          query_params.push("limit=" + params.get("limit"));
+        if (this.$route.query.limit) {
+          query_params.push("limit=" + this.$route.query.limit);
+        }
+        if (this.$route.query.tag) {
+          query_params.push("tag=" + this.$route.query.tag);
         }
 
         endpoint += "?" + query_params.join("&");
