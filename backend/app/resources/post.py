@@ -1,17 +1,17 @@
 from flask_restful import Resource, request
 from bson import ObjectId
-from marshmallow import fields
 from app.utils import decode_token
 from app.models.post import PostModel
-from app.models.user import UserModel
+from app.models.user import UserModel, UserFollowModel
 from app.models.comment import CommentModel
 from app.models.vote import VoteModel
 from app.models.tag import TagModel
 from app.schemas.post import post_schema, PostSchema
+from app.schemas.user import UserSchema
 from app.schemas.comment import comment_schema
 from app.schemas.tag import tag_schema
 from app.config import FRONTEND_ROOT
-from app.middleware.auth import auth_required
+from app.middleware.auth import auth_required, check_token
 from jwt import PyJWTError
 
 
@@ -325,3 +325,43 @@ class PostTagsView(Resource):
                 return {"message": "Tag removed successfully."}, 204
             else:
                 return {"error": "No tag found with this id in post tags."}, 404
+
+
+def getOtherUsersPostsWithUserID(id):
+    try:
+        user = UserModel.objects.get(id=id, deleted_at=None)
+    except UserModel.DoesNotExist:
+        return {"error": "User not found."}, 404
+
+    excluded_fields = ["content", "comments", "vote", "tags", "author"]
+    posts = (
+        PostModel.objects.filter(author=id, deleted_at=None)
+        .order_by("-updated_at")
+        .exclude(*excluded_fields)
+    )
+
+    user_details = UserSchema(exclude=["email"]).dump(user)
+    post_details = PostSchema(exclude=excluded_fields).dump(posts, many=True)
+
+    if check_token(request) == True:
+        # check following
+        try:
+            UserFollowModel.objects.get(
+                follower_id=request.user["id"], followee_id=id, deleted_at=None
+            )
+            user_details["is_following"] = True  # I'm following this person
+        except UserFollowModel.DoesNotExist:
+            pass
+        # check if user following request.user["id"]
+        try:
+            UserFollowModel.objects.get(
+                follower_id=id, followee_id=request.user["id"], deleted_at=None
+            )
+            user_details["is_follower"] = True  # This person following me
+        except UserFollowModel.DoesNotExist:
+            pass
+
+    return {
+        "user": user_details,
+        "posts": post_details,
+    }
