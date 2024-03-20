@@ -20,7 +20,10 @@
           />
         </div>
         <p class="mb-4 text-lg font-light text-gray-500">
-          Creator of this content: {{ article.author?.name }}
+          Creator of this content:
+          <RouterLink :to="`/profile/${article.author?.id}`">{{
+            article.author?.name
+          }}</RouterLink>
         </p>
         <p class="mb-4 text-lg font-light text-gray-500">
           Publis Date: {{ new Date(article.created_at).toUTCString() }}
@@ -106,7 +109,9 @@
                 {{ new Date(comment.created_at).toUTCString() }}
               </span>
               <span class="text-sm mb-4">
-                {{ comment.author.name }}
+                <RouterLink :to="`/profile/${comment.author.id}`">
+                  {{ comment.author.name }}
+                </RouterLink>
               </span>
             </div>
             <p class="mb-5 font-light text-gray-500">{{ comment.content }}</p>
@@ -166,11 +171,13 @@
 <script>
   import { useToast } from "vue-toastify";
   import TagButton from "../TagButtonComponent.vue";
+  import { RouterLink } from "vue-router";
 
   export default {
     name: "ArticleDetailView",
     components: {
       TagButton,
+      RouterLink,
     },
     props: {
       article: {
