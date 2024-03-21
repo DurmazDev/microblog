@@ -9,13 +9,13 @@ from mongoengine import (
     DoesNotExist,
 )
 from marshmallow import ValidationError as MMW_ValidationError
-from app.config import REDIS_SYNC_INTERVAL, REDIS_SETTINGS, REDIS_URI, MONGODB_SETTINGS
-from app.utils import LogOutBlockList
 from datetime import timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
-from app.database import connect_redis, connect_mongodb
 import logging
 
+from app.utils import LogOutBlockList
+from app.config import REDIS_SYNC_INTERVAL, REDIS_SETTINGS, REDIS_URI, MONGODB_SETTINGS
+from app.database import connect_redis, connect_mongodb
 from app.resources.root import RootResource
 from app.resources.user import (
     UserResource,
