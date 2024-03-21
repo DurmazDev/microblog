@@ -21,9 +21,6 @@
 
 <script>
   export default {
-    mounted() {
-      console.log(this.$route);
-    },
     props: {
       tag: {
         type: String,
