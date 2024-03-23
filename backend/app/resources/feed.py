@@ -1,6 +1,9 @@
 from flask_restful import Resource, request
 from app.models.post import PostModel
-from app.schemas.post import post_schema
+from app.models.user import UserModel
+from app.models.tag import TagModel
+from app.schemas.post import PostSchema
+from app.models.tag import TagModel
 
 
 class FeedResource(Resource):
@@ -23,73 +26,70 @@ class FeedResource(Resource):
         limit = request.args.get("limit", 50, type=int)
         sort_vote = request.args.get("vote", None, type=str)
         sort_date = request.args.get("date", "desc", type=str)
+        sort_tag = request.args.get("tag", None, type=str)
 
         sort_values = []
 
         if sort_vote:
             if sort_vote.lower() == "asc":
-                sort_values.append({"vote": 1})
+                sort_values.append("vote")
             else:
-                sort_values.append({"vote": -1})
-        if sort_date.lower() == "asc":
-            sort_values.append({"created_at": 1})
-        else:
-            sort_values.append({"created_at": -1})
+                sort_values.append("-vote")
+        if sort_date:
+            if sort_date.lower() == "asc":
+                sort_values.append("created_at")
+            else:
+                sort_values.append("-created_at")
 
         skip = (page - 1) * limit
-
-        pipeline = [
-            {"$match": {"deleted_at": None}},
-            {
-                "$lookup": {
-                    "from": "user_model",
-                    "localField": "author",
-                    "foreignField": "_id",
-                    "as": "author",
-                }
-            },
-            {"$unwind": "$author"},
-            {
-                "$project": {
-                    "id": "$_id",
-                    "title": 1,
-                    "content": {"$concat": [{"$substr": ["$content", 0, 200]}, "..."]},
-                    "url": 1,
-                    "vote": 1,
-                    "created_at": 1,
-                    "updated_at": 1,
-                    "author": {"id": "$author._id", "name": "$author.name"},
-                }
-            },
-        ]
-
-        if sort_values:
-            sort_dict = {}
-            for sort_value in sort_values:
-                sort_dict.update(sort_value)
-            pipeline.append({"$sort": sort_dict})
-
-        pipeline.append({"$skip": skip})
-        pipeline.append({"$limit": limit})
-
-        cursor = PostModel.objects().aggregate(
-            [
-                {"$facet": {"results": pipeline, "count": [{"$count": "total"}]}},
-            ]
+        results = (
+            PostModel.objects(deleted_at=None)
+            .skip(skip)
+            .limit(limit)
+            .order_by(*sort_values)
         )
 
-        query_result = next(cursor, None)
+        author_ids = [post["author"] for post in results]
+        author_data = UserModel.objects(id__in=author_ids).only("id", "name")
+        author_data_map = {author.id: author.name for author in author_data}
 
-        if query_result:
-            results = query_result.get("results", [])
-            try:
-                total_count = query_result.get("count", [{}])[0].get("total", 0)
-            except:
-                total_count = 0
+        for post in results:
+            author_id = post["author"]
+            author_name = author_data_map.get(author_id, "Anonymous")
+            post["author"] = {"id": author_id, "name": author_name}
 
-            total_pages = (total_count + limit - 1) // limit
+        nested_tag_ids = [post["tags"] for post in results]
+        tag_ids = []
+        [tag_ids.extend(inner_list) for inner_list in nested_tag_ids]
+        tag_data = TagModel.objects(id__in=tag_ids).only("id", "name")
+        tag_data_map = {tag["id"]: tag["name"] for tag in tag_data}
+
+        if sort_tag and sort_tag in tag_data_map.values():
+            new_results = []
+            outher_results = []
+            for post in results:
+                if sort_tag in [tag_data_map[tag] for tag in post["tags"]]:
+                    new_results.append(post)
+                else:
+                    outher_results.append(post)
+            results = new_results + outher_results
+
+        for post in results:
+            post_tag_ids = post["tags"]
+            temp_tags = []
+            for id in post_tag_ids:
+                tag_name = tag_data_map.get(id, "Unknown")
+                temp_tags.append({"id": id, "name": tag_name})
+            post["tags"] = temp_tags
+
+        total_count = PostModel.objects(deleted_at=None).count()
+        total_pages = (total_count + limit - 1) // limit
+
+        feed_schema = PostSchema(exclude=("deleted_at", "comments"))
+
+        if results:
             return {
-                "results": post_schema.dump(results, many=True),
+                "results": feed_schema.dump(results, many=True),
                 "pagination": {
                     "current_page": page,
                     "next_page": None if page == total_pages else page + 1,

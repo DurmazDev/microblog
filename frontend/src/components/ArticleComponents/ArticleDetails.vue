@@ -11,6 +11,14 @@
           class="mb-4 text-left"
           v-html="renderHTML(article.content)"
         ></div>
+        <div class="flex justify-center">
+          <TagButton
+            :v-if="article.tags"
+            v-for="(tag, index) in article.tags"
+            :key="index"
+            :tag="tag.name"
+          />
+        </div>
         <p class="mb-4 text-lg font-light text-gray-500">
           Creator of this content: {{ article.author?.name }}
         </p>
@@ -35,15 +43,10 @@
           >
             <div class="flex justify-between items-center mb-5 text-gray-500">
               <div>
-                <svg
-                  fill="#000000"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M12.781 2.375c-.381-.475-1.181-.475-1.562 0l-8 10A1.001 1.001 0 0 0 4 14h4v7a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-7h4a1.001 1.001 0 0 0 .781-1.625l-8-10zM15 12h-1v8h-4v-8H6.081L12 4.601 17.919 12H15z"
-                  />
-                </svg>
+                <img
+                  src="@/assets/icons/up-arrow.svg"
+                  alt="upvote"
+                />
                 <span class="text-sm mb-4">Up Vote</span>
               </div>
             </div>
@@ -60,15 +63,10 @@
           >
             <div class="flex justify-between items-center mb-5 text-gray-500">
               <div>
-                <svg
-                  fill="#000000"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M20.901 10.566A1.001 1.001 0 0 0 20 10h-4V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v7H4a1.001 1.001 0 0 0-.781 1.625l8 10a1 1 0 0 0 1.562 0l8-10c.24-.301.286-.712.12-1.059zM12 19.399 6.081 12H10V4h4v8h3.919L12 19.399z"
-                  />
-                </svg>
+                <img
+                  src="@/assets/icons/down-arrow.svg"
+                  alt="downvote"
+                />
                 <span class="text-sm mb-4">Down Vote</span>
               </div>
             </div>
@@ -111,25 +109,12 @@
                 @click="deleteComment(comment.id)"
                 class="flex"
               >
-                <svg
-                  fill="#000000"
+                <img
                   height="20px"
                   width="20px"
-                  version="1.1"
-                  id="Layer_1"
-                  viewBox="0 0 354.319 354.319"
-                  xml:space="preserve"
-                >
-                  <path
-                    id="XMLID_2_"
-                    d="M293.765,125.461l-41.574-17.221l17.221-41.574c3.17-7.654-0.464-16.428-8.118-19.599L150.428,1.146
-          C142.775-2.024,134,1.61,130.83,9.264l-17.221,41.574L72.035,33.617c-7.654-3.17-16.428,0.464-19.599,8.118
-          c-3.17,7.654,0.464,16.428,8.118,19.599l55.433,22.961l96.628,40.024H87.16c-8.284,0-15,6.716-15,15v200c0,8.284,6.716,15,15,15h180
-          c8.284,0,15-6.716,15-15V153.126l0.125,0.052c1.877,0.777,3.821,1.146,5.734,1.146c5.886,0,11.472-3.487,13.864-9.264
-          C305.053,137.406,301.419,128.631,293.765,125.461z M141.326,62.318l11.48-27.716l83.148,34.441l-11.48,27.716L182.9,79.539
-          L141.326,62.318z"
-                  />
-                </svg>
+                  src="@/assets/icons/trash.svg"
+                  alt="trash"
+                />
                 Delete Comment
               </button>
             </div>
@@ -157,9 +142,13 @@
 
 <script>
   import { useToast } from "vue-toastify";
+  import TagButton from "../TagButtonComponent.vue";
 
   export default {
     name: "ArticleDetailView",
+    components: {
+      TagButton,
+    },
     props: {
       article: {
         type: Object,

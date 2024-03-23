@@ -28,46 +28,33 @@
         class="inline-flex items-center font-medium text-primary-600 hover:underline"
       >
         Read more
-        <svg
-          class="ml-2 w-4 h-4"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            fill-rule="evenodd"
-            d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
-            clip-rule="evenodd"
-          ></path>
-        </svg>
+        <img
+          class="ml-2 w-4 h-4 fill-current"
+          src="@/assets/icons/right-arrow.svg"
+          alt="right-arrow"
+        />
       </RouterLink>
-      <!-- TODO(ahmet): Create update button & event. -->
-      <button
-        v-if="allowDelete"
-        @click="deletePost(item.id)"
-        class="flex"
-      >
-        <svg
-          fill="#000000"
-          height="20px"
-          width="20px"
-          version="1.1"
-          id="Layer_1"
-          viewBox="0 0 354.319 354.319"
-          xml:space="preserve"
+      <div class="flex">
+        <TagButton
+          :v-if="item.tags"
+          v-for="(tag, index) in item.tags"
+          :key="index"
+          :tag="tag.name"
+        />
+        <button
+          v-if="allowDelete"
+          @click="deletePost(item.id)"
+          class="flex"
         >
-          <path
-            id="XMLID_2_"
-            d="M293.765,125.461l-41.574-17.221l17.221-41.574c3.17-7.654-0.464-16.428-8.118-19.599L150.428,1.146
-          C142.775-2.024,134,1.61,130.83,9.264l-17.221,41.574L72.035,33.617c-7.654-3.17-16.428,0.464-19.599,8.118
-          c-3.17,7.654,0.464,16.428,8.118,19.599l55.433,22.961l96.628,40.024H87.16c-8.284,0-15,6.716-15,15v200c0,8.284,6.716,15,15,15h180
-          c8.284,0,15-6.716,15-15V153.126l0.125,0.052c1.877,0.777,3.821,1.146,5.734,1.146c5.886,0,11.472-3.487,13.864-9.264
-          C305.053,137.406,301.419,128.631,293.765,125.461z M141.326,62.318l11.48-27.716l83.148,34.441l-11.48,27.716L182.9,79.539
-          L141.326,62.318z"
+          <img
+            height="20px"
+            width="20px"
+            src="@/assets/icons/trash.svg"
+            alt="trash"
           />
-        </svg>
-        Delete Post
-      </button>
+          Delete Post
+        </button>
+      </div>
     </div>
   </article>
 </template>
@@ -76,6 +63,7 @@
   import { RouterLink } from "vue-router";
   import config from "@/config";
   import { useToast } from "vue-toastify";
+  import TagButton from "../TagButtonComponent.vue";
 
   export default {
     name: "ArticleGrid",
@@ -124,6 +112,6 @@
         }
       },
     },
-    components: { RouterLink },
+    components: { RouterLink, TagButton },
   };
 </script>

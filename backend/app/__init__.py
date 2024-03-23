@@ -18,10 +18,11 @@ import logging
 
 from app.resources.root import RootResource
 from app.resources.user import UserResource
-from app.resources.post import PostResource, ShowPostResource
+from app.resources.post import PostResource, ShowPostResource, PostTagsView
 from app.resources.feed import FeedResource
 from app.resources.vote import VoteResource
 from app.resources.comment import CommentResource
+from app.resources.tag import TagResource
 from app.resources.auth import LoginView, RegisterView, LogOutView, RefreshView
 
 
@@ -31,9 +32,9 @@ def create_app(
     redis_client=None,
     **kwargs,
 ):
-    logging.basicConfig(
-        filename="app/log/flask-error.log", level=logging.ERROR, filemode="a+"
-    )
+    # logging.basicConfig(
+    #     filename="app/log/flask-error.log", level=logging.ERROR, filemode="a+"
+    # )
     app = Flask(__name__)
     api = Api(app)
 
@@ -110,6 +111,16 @@ def create_app(
             strategy="moving-window",
         )
 
+    app.add_url_rule(
+        "/post/<string:id>/tag",
+        "post_tag_events",
+        PostTagsView.as_view("post_tag_events"),
+        methods=["GET", "POST", "DELETE"],
+    )
+    app.add_url_rule("/auth/login", "login", LoginView, methods=["POST"])
+    app.add_url_rule("/auth/register", "register", RegisterView, methods=["POST"])
+    app.add_url_rule("/auth/logout", "logout", LogOutView, methods=["DELETE"])
+    app.add_url_rule("/auth/refresh", "refresh", RefreshView, methods=["POST"])
     api.add_resource(RootResource, "/")
     api.add_resource(UserResource, "/user", "/user/<string:id>")
     api.add_resource(ShowPostResource, "/post/<string:id>")
@@ -117,9 +128,6 @@ def create_app(
     api.add_resource(CommentResource, "/comment", "/comment/<string:id>")
     api.add_resource(VoteResource, "/vote")
     api.add_resource(FeedResource, "/feed")
-    app.add_url_rule("/auth/login", "login", LoginView, methods=["POST"])
-    app.add_url_rule("/auth/register", "register", RegisterView, methods=["POST"])
-    app.add_url_rule("/auth/logout", "logout", LogOutView, methods=["DELETE"])
-    app.add_url_rule("/auth/refresh", "refresh", RefreshView, methods=["POST"])
+    api.add_resource(TagResource, "/tag", "/tag/<string:id>")
 
     return app

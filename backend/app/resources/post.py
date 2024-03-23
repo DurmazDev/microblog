@@ -1,12 +1,15 @@
 from flask_restful import Resource, request
 from bson import ObjectId
+from marshmallow import fields
 from app.utils import decode_token
 from app.models.post import PostModel
-from app.schemas.post import post_schema, PostSchema
 from app.models.user import UserModel
 from app.models.comment import CommentModel
-from app.schemas.comment import comment_schema
 from app.models.vote import VoteModel
+from app.models.tag import TagModel
+from app.schemas.post import post_schema, PostSchema
+from app.schemas.comment import comment_schema
+from app.schemas.tag import tag_schema
 from app.config import FRONTEND_ROOT
 from app.middleware.auth import auth_required
 from jwt import PyJWTError
@@ -36,11 +39,22 @@ class ShowPostResource(Resource):
                 post = PostModel.objects(url=url, deleted_at=None).get()
         except PostModel.DoesNotExist:
             return {"error": "Post not found"}, 404
-        comments = CommentModel.objects.filter(id__in=post.comments)
+        comments = CommentModel.objects.filter(
+            id__in=post.comments, deleted_at=None
+        ).limit(50)
         comments = comment_schema.dump(comments, many=True)
 
         if not comments:
             comments = []
+
+        if post.tags != None:
+            tags = TagModel.objects.filter(id__in=post.tags, deleted_at=None).limit(10)
+            tags = tag_schema.dump(tags, many=True)
+
+            if not tags:
+                tags = []
+            else:
+                post.tags = tags
 
         try:
             author = UserModel.objects(id=post.author, deleted_at=None).get()
@@ -85,7 +99,7 @@ class PostResource(Resource):
         Returns:
             JSON: List of user's posts.
         """
-        excluded_fields = ["content", "comments", "vote"]
+        excluded_fields = ["content", "comments", "vote", "tags"]
         posts = (
             PostModel.objects.filter(author=request.user["id"], deleted_at=None)
             .order_by("-updated_at")
@@ -108,14 +122,30 @@ class PostResource(Resource):
         """
         values = request.get_json()
         errors = post_schema.validate(values)
+        tag_ids = None
         if errors:
-            return {"error": "Unallowed attribute."}, 400
+            if (
+                errors.get("tags")
+                and isinstance(values["tags"], list)
+                and all(ObjectId.is_valid(item) for item in values["tags"])
+            ):
+                tag_ids = list(set(values["tags"]))
+                tags = TagModel.objects(id__in=tag_ids, deleted_at=None)
+                if len(tags) != len(tag_ids):
+                    return {"error": "Invalid tag id."}, 400
+            else:
+                return {"error": "Unallowed attribute."}, 400
 
         created_post = PostModel(
             title=values["title"],
             author=request.user["id"],
             content=values["content"],
-        ).save()
+        )
+
+        if tag_ids:
+            created_post.tags = tag_ids
+
+        created_post.save()
 
         return {
             "message": "Post created successfully.",
@@ -180,3 +210,118 @@ class PostResource(Resource):
 
         post.soft_delete()
         return {}, 204
+
+
+class PostTagsView(Resource):
+    """
+    This view handles the tags associated with a post.
+
+    Endpoint:
+        GET /posts/<id>/tag
+        POST /posts/<id>/tag
+        DELETE /posts/<id>/tag
+    """
+
+    def get(self, id):
+        """
+        Retrieves tags associated with a post.
+
+        Parameters:
+            id (str): Post ID
+
+        Returns:
+            JSON: List of tags associated with the post.
+        """
+        try:
+            post = PostModel.objects(id=id, deleted_at=None).get()
+            if post.tags == None:
+                return {"error": "No tags found."}, 404
+        except PostModel.DoesNotExist:
+            return {"error": "Post not found"}, 404
+
+        page = request.args.get("page", default=1, type=int)
+        per_page = request.args.get("limit", default=10, type=int)
+        start_index = (page - 1) * per_page
+
+        tags = (
+            TagModel.objects.filter(id__in=post.tags, deleted_at=None)
+            .skip(start_index)
+            .limit(per_page)
+        )
+        return tag_schema.dump(tags, many=True)
+
+    @auth_required
+    def post(self, id):
+        """
+        Adds a new tag to a post.
+
+        Parameters:
+            id (str): Post ID
+
+        Returns:
+            JSON: Message indicating successful tag addition or error message
+        """
+        params = request.get_json()
+        try:
+            if params["id"] != None and ObjectId.is_valid(params["id"]):
+                tag_id = params["id"]
+            else:
+                return {"error": "No tag found with this id."}, 400
+        except KeyError:
+            return {"error": "id field is required."}, 400
+
+        try:
+            post = PostModel.objects(
+                id=id, author=request.user["id"], deleted_at=None
+            ).get()
+        except PostModel.DoesNotExist:
+            return {"error": "Post not found"}, 404
+
+        try:
+            tag = TagModel.objects(id=tag_id, deleted_at=None).get()
+        except TagModel.DoesNotExist:
+            return {"error": "Tag not found"}, 404
+
+        for item in post.tags:
+            if item == tag.id:
+                return {"error": "Tag already exists."}, 400
+        post.tags.append(tag["id"])
+        post.save()
+        return {"message": "Tag added successfully."}, 201
+
+    @auth_required
+    def delete(self, id):
+        """
+        Removes a tag from a post.
+
+        Parameters:
+            id (str): Post ID
+
+        Returns:
+            JSON: Message indicating successful tag removal or error message
+        """
+        params = request.get_json()
+        try:
+            if params["id"] != None and ObjectId.is_valid(params["id"]):
+                tag_id = ObjectId(params["id"])
+            else:
+                return {"error": "No tag found with this id."}, 400
+        except KeyError:
+            return {"error": "id field is required."}, 400
+
+        try:
+            post = PostModel.objects(
+                id=id, author=request.user["id"], deleted_at=None
+            ).get()
+        except PostModel.DoesNotExist:
+            return {"error": "Post not found"}, 404
+
+        if post.tags == None:
+            return {"error": "No tags found."}, 404
+        else:
+            if ObjectId(tag_id) in post.tags:
+                post.tags.remove(ObjectId(tag_id))
+                post.save()
+                return {"message": "Tag removed successfully."}, 204
+            else:
+                return {"error": "No tag found with this id in post tags."}, 404
