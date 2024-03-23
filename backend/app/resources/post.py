@@ -1,5 +1,6 @@
 from flask_restful import Resource, request
 from bson import ObjectId
+from marshmallow import fields
 from app.utils import decode_token
 from app.models.post import PostModel
 from app.models.user import UserModel, UserFollowModel
