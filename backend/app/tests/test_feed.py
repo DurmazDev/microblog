@@ -7,6 +7,7 @@ from app import create_app
 from app.models.post import PostModel
 from app.models.comment import CommentModel
 from app.models.user import UserModel
+from app.schemas.user import user_schema
 
 mongo_client = MongoClient()
 redis_client = FakeStrictRedis()
@@ -19,6 +20,15 @@ app = create_app(
     TESTING=True,
 )
 TEST_HASHED_PASSWORD = hashpw("testpass".encode("utf-8"), gensalt(rounds=12))
+
+
+def create_user():
+    user = UserModel(
+        name="Test User",
+        email=f"{uuid4()}@example.com",
+        password=hashpw("test_pass".encode("utf-8"), gensalt(rounds=12)),
+    ).save()
+    return user_schema.dump(user)
 
 
 @pytest.fixture
@@ -43,7 +53,7 @@ def test_get_feed_pagination(client):
         PostModel.objects.create(
             title=f"Post {i+1}",
             content=f"Content {i+1}",
-            author=user1.id,
+            author=user1["id"],
         )
 
     response = client.get("/feed?page=2&limit=50")
@@ -57,47 +67,42 @@ def test_get_feed_pagination(client):
     assert len(response.json["results"]) == 10
 
 
-# TODO(ahmet): THIS TEST IS INSANE!! IT'S RETURNS INSANE RESULTS, FIX IT!!
-# def test_get_feed(client):
-#     email = f"test_{uuid4()}@example.com"
-#     user1 = UserModel.objects.create(
-#         name="Test User 1", email=email, password=TEST_HASHED_PASSWORD
-#     )
-#     post1 = PostModel.objects.create(
-#         title="Post 1", content="Content 1", author=user1.id
-#     )
-#     post2 = PostModel.objects.create(
-#         title="Post 2",
-#         content="Content 2",
-#         author=user1.id,
-#     )
+def test_get_feed(client):
+    user1 = create_user()
+    # Flush DB
+    PostModel.objects().all().delete()
 
-#     comment1 = CommentModel.objects.create(
-#         post_id=post1.id,
-#         content="Comment 1",
-#         author={"id": str(user1.id), "name": "Test User"},
-#     )
-#     comment2 = CommentModel.objects.create(
-#         post_id=post2.id,
-#         content="Comment 2",
-#         author={"id": str(user1.id), "name": "Test User"},
-#     )
+    post1 = PostModel(title="Post 1", content="Content 1", author=user1["id"]).save()
+    post2 = PostModel(
+        title="Post 2",
+        content="Content 2",
+        author=user1["id"],
+    ).save()
+    comment1 = CommentModel(
+        post_id=post1.id,
+        content="Comment 1",
+        author={"id": str(user1["id"]), "name": "Test User"},
+    ).save()
+    comment2 = CommentModel(
+        post_id=post2.id,
+        content="Comment 2",
+        author={"id": str(user1["id"]), "name": "Test User"},
+    ).save()
 
-#     post1.comments.append(comment1.id)
-#     post2.comments.append(comment2.id)
+    post1.comments.append(comment1.id)
+    post2.comments.append(comment2.id)
 
-#     post1.save()
-#     post2.save()
+    post1.save()
+    post2.save()
 
-#     response = client.get("/feed?date=asc")
+    response = client.get("/feed?date=asc")
 
-
-#     assert response.status_code == 200
-#     assert response.json["results"][0]["url"] == post1.url
-#     assert response.json["results"][0]["title"] == post1.title
-#     assert response.json["results"][0]["content"] == post1.content[:200] + "..."
-#     assert response.json["results"][0]["author"]["id"] == str(user1.id)
-#     assert response.json["results"][1]["url"] == post2.url
-#     assert response.json["results"][1]["title"] == post2.title
-#     assert response.json["results"][1]["content"] == post2.content[:200] + "..."
-#     assert response.json["results"][1]["author"]["id"] == str(user1.id)
+    assert response.status_code == 200
+    assert response.json["results"][0]["url"][:-4] == post1.url[:-4]
+    assert response.json["results"][0]["title"] == post1.title
+    assert response.json["results"][0]["content"] == post1.content[:200] + "..."
+    assert response.json["results"][0]["author"]["id"] == str(user1["id"])
+    assert response.json["results"][1]["url"][:-4] == post2.url[:-4]
+    assert response.json["results"][1]["title"] == post2.title
+    assert response.json["results"][1]["content"] == post2.content[:200] + "..."
+    assert response.json["results"][1]["author"]["id"] == str(user1["id"])

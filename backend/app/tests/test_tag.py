@@ -35,7 +35,6 @@ def create_user():
         email=f"{uuid4()}@example.com",
         password=hashpw("test_pass".encode("utf-8"), gensalt(rounds=12)),
     ).save()
-    user_schmea = user_schema.dump(user)
     return user_schema.dump(user)
 
 
