@@ -17,6 +17,7 @@ class FeedResource(Resource):
         - limit (int, optional): Number of posts per page. Default is 50.
         - vote (str, optional): Sorting order based on votes. Use 'asc' for ascending and 'desc' for descending.
         - date (str, optional): Sorting order based on creation date. Use 'asc' for ascending and 'desc' for descending.
+        - q (str, optional): Filter posts based on followed users. Use 'followed' to filter posts from followed users only.
 
     Returns:
         A paginated feed of posts based on the specified parameters.
