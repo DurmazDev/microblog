@@ -3,6 +3,7 @@ import HomeView from "@/views/HomeView.vue";
 import LoginView from "@/views/AuthViews/LoginView.vue";
 import RegisterView from "@/views/AuthViews/RegisterView.vue";
 import ProfileView from "@/views/ProfileView.vue";
+import UserProfileView from "@/views/UserProfileView.vue";
 import AboutView from "@/views/AboutView.vue";
 import ArticleDetailView from "@/views/ArticleViews/ArticleDetailView.vue";
 import ArticleCreateView from "@/views/ArticleViews/ArticleCreateView.vue";
@@ -40,6 +41,11 @@ const router = createRouter({
       path: "/profile",
       name: "profile",
       component: ProfileView,
+    },
+    {
+      path: "/profile/:userID",
+      name: "user-profile",
+      component: UserProfileView,
     },
     {
       path: "/about",

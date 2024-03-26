@@ -22,3 +22,29 @@ class UserSchema(Schema):
 
 
 user_schema = UserSchema()
+
+
+class SimpleUserSchema(Schema):
+    id = fields.String()
+    name = fields.String()
+
+
+class UserFollowSchema(Schema):
+    id = fields.String(dump_only=True)
+    follower_id = fields.String(dump_only=True, required=False, allow_none=True)
+    followee_id = fields.String(required=True)
+    followee = fields.Nested(
+        SimpleUserSchema, dump_only=True, required=False, allow_none=True
+    )
+    follower = fields.Nested(
+        SimpleUserSchema, dump_only=True, required=False, allow_none=True
+    )
+    name = fields.String(dump_only=True, allow_none=True, required=False)
+    created_at = fields.DateTime(dump_only=True)
+    deleted_at = fields.DateTime(dump_only=True)
+
+    class Meta:
+        exclude = ["deleted_at", "created_at"]
+
+
+user_follow_schema = UserFollowSchema()

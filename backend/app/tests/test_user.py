@@ -4,10 +4,11 @@ from bson import ObjectId
 from mongomock import MongoClient
 from fakeredis import FakeStrictRedis
 from app import create_app
-from app.models.user import UserModel
+from app.models.user import UserModel, UserFollowModel
 from app.schemas.user import user_schema
 from app.utils import create_token
 from bcrypt import hashpw, gensalt
+from datetime import datetime
 
 
 # Mock MongoDB and Redis connections
@@ -91,9 +92,54 @@ def test_update_user_unauthorized(client):
 # def test_delete_user(client):
 #     response = client.delete("/user", headers={"Authorization": f"Bearer {token}"})
 
+
 #     assert response.status_code == 202
 #     assert "message" in response.json
 #     assert (
 #         response.json["message"]
 #         == "An email sent for delete confirmation, please confirm your deletion from your email."
 #     )
+def test_get_users_followings(client):
+    UserFollowModel(follower_id=user["id"], followee_id=create_user()["id"]).save()
+    response = client.get(
+        "/user/followings",
+        headers={"Authorization": f"Bearer {create_token(user_schema.dump(user))}"},
+    )
+
+    assert response.status_code == 200
+    assert isinstance(response.json, list)
+    assert len(response.json) > 0
+    assert all("id" in user and "name" in user for user in response.json)
+
+
+def test_get_users_followings_not_following(client):
+    temp_token = create_token({"id": str(ObjectId())})
+    response = client.get(
+        "/user/followings", headers={"Authorization": f"Bearer {temp_token}"}
+    )
+
+    assert response.status_code == 404
+    assert "error" in response.json
+    assert response.json["error"] == "You are not following anyone."
+
+
+def test_get_users_followings_deleted_user(client):
+    deleted_user = UserModel(
+        name="Deleted User",
+        email=f"{uuid4()}@example.com",
+        password=hashpw("test_pass".encode("utf-8"), gensalt(rounds=12)),
+        deleted_at=datetime.utcnow(),
+    ).save()
+
+    UserFollowModel(
+        follower_id=str(user["id"]), followee_id=str(deleted_user["id"])
+    ).save()
+
+    response = client.get(
+        "/user/followings", headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 200
+    assert isinstance(response.json, list)
+    assert len(response.json) > 0
+    assert all("id" in user and "name" in user for user in response.json)

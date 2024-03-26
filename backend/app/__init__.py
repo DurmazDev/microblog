@@ -9,16 +9,27 @@ from mongoengine import (
     DoesNotExist,
 )
 from marshmallow import ValidationError as MMW_ValidationError
-from app.config import REDIS_SYNC_INTERVAL, REDIS_SETTINGS, REDIS_URI, MONGODB_SETTINGS
-from app.utils import LogOutBlockList
 from datetime import timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
-from app.database import connect_redis, connect_mongodb
 import logging
 
+from app.utils import LogOutBlockList
+from app.config import REDIS_SYNC_INTERVAL, REDIS_SETTINGS, REDIS_URI, MONGODB_SETTINGS
+from app.database import connect_redis, connect_mongodb
 from app.resources.root import RootResource
-from app.resources.user import UserResource
-from app.resources.post import PostResource, ShowPostResource, PostTagsView
+from app.resources.user import (
+    UserResource,
+    UserFollowResource,
+    getUsersFollowersView,
+    getUsersFollowingsView,
+    removeUsersFollowersView,
+)
+from app.resources.post import (
+    PostResource,
+    ShowPostResource,
+    PostTagsView,
+    get_other_users_posts_with_user_id,
+)
 from app.resources.feed import FeedResource
 from app.resources.vote import VoteResource
 from app.resources.comment import CommentResource
@@ -96,12 +107,17 @@ def create_app(
         app.logger.error(error)
         return {"error": "Not found."}, 404
 
+    @app.errorhandler(405)
+    def handle_method_not_allowed_error(error):
+        app.logger.error(error)
+        return {"error": "Method not allowed."}, 405
+
     @app.errorhandler(Exception)
     def handle_other_errors(error):
         app.logger.error(error)
         return {"error": "An error occurred."}, 500
 
-    if kwargs.get("TESTING") == False:
+    if kwargs.get("TESTING") != True:
         Limiter(
             get_remote_address,
             app=app,
@@ -116,6 +132,36 @@ def create_app(
         "post_tag_events",
         PostTagsView.as_view("post_tag_events"),
         methods=["GET", "POST", "DELETE"],
+    )
+    app.add_url_rule(
+        "/user/<string:id>/post",
+        "user_posts",
+        get_other_users_posts_with_user_id,
+        methods=["GET"],
+    )
+    app.add_url_rule(
+        "/user/<string:id>/follow",
+        "user_follow",
+        UserFollowResource.as_view("user_follow"),
+        methods=["POST", "DELETE"],
+    )
+    app.add_url_rule(
+        "/user/followers",
+        "user_followers",
+        getUsersFollowersView,
+        methods=["GET"],
+    )
+    app.add_url_rule(
+        "/user/followers/<string:id>",
+        "remove_followers",
+        removeUsersFollowersView,
+        methods=["DELETE"],
+    )
+    app.add_url_rule(
+        "/user/followings",
+        "user_following",
+        getUsersFollowingsView,
+        methods=["GET"],
     )
     app.add_url_rule("/auth/login", "login", LoginView, methods=["POST"])
     app.add_url_rule("/auth/register", "register", RegisterView, methods=["POST"])

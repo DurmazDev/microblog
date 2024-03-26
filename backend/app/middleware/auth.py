@@ -6,6 +6,30 @@ from bson import ObjectId
 import jwt
 
 
+def check_token(req):
+    token = req.headers.get("Authorization")
+    if not token:
+        return {"error": "Token is missing."}, 401
+    token = token.split(" ")[-1]
+    try:
+        decoded_token = decode_token(token)
+        if not ObjectId.is_valid(decoded_token["id"]):
+            return False
+        logout_query = current_app.config["logout_blocklist"].check_token(
+            decoded_token["id"], token
+        )
+        if logout_query:
+            return False
+
+        req.user = decoded_token
+        req.token = token
+        return True
+    except jwt.ExpiredSignatureError:
+        return False
+    except jwt.PyJWTError:
+        return False
+
+
 def auth_required(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
