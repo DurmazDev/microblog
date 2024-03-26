@@ -327,7 +327,7 @@ class PostTagsView(Resource):
                 return {"error": "No tag found with this id in post tags."}, 404
 
 
-def getOtherUsersPostsWithUserID(id):
+def get_other_users_posts_with_user_id(id):
     try:
         user = UserModel.objects.get(id=id, deleted_at=None)
     except UserModel.DoesNotExist:
