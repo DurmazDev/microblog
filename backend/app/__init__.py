@@ -28,7 +28,7 @@ from app.resources.post import (
     PostResource,
     ShowPostResource,
     PostTagsView,
-    getOtherUsersPostsWithUserID,
+    get_other_users_posts_with_user_id,
 )
 from app.resources.feed import FeedResource
 from app.resources.vote import VoteResource
@@ -136,7 +136,7 @@ def create_app(
     app.add_url_rule(
         "/user/<string:id>/post",
         "user_posts",
-        getOtherUsersPostsWithUserID,
+        get_other_users_posts_with_user_id,
         methods=["GET"],
     )
     app.add_url_rule(
