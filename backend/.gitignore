@@ -4,3 +4,4 @@ TODO.txt
 app/config.py
 pytest.ini
 ./.coverage
+.pytest_cache/

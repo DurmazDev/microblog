@@ -11,9 +11,11 @@ from mongoengine import (
 from marshmallow import ValidationError as MMW_ValidationError
 from datetime import timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
+from flask_socketio import SocketIO
+from app.socketio_handler import handle_socketio_requests
 import logging
 
-from app.utils import LogOutBlockList
+from app.utils import LogOutBlockList, decode_token
 from app.config import REDIS_SYNC_INTERVAL, REDIS_SETTINGS, REDIS_URI, MONGODB_SETTINGS
 from app.database import connect_redis, connect_mongodb
 from app.resources.root import RootResource
@@ -36,6 +38,8 @@ from app.resources.comment import CommentResource
 from app.resources.tag import TagResource
 from app.resources.auth import LoginView, RegisterView, LogOutView, RefreshView
 
+socketio = SocketIO()
+
 
 def create_app(
     mongodb_uri=MONGODB_SETTINGS["host"],
@@ -43,9 +47,9 @@ def create_app(
     redis_client=None,
     **kwargs,
 ):
-    # logging.basicConfig(
-    #     filename="app/log/flask-error.log", level=logging.ERROR, filemode="a+"
-    # )
+    logging.basicConfig(
+        filename="app/log/flask-error.log", level=logging.ERROR, filemode="a+"
+    )
     app = Flask(__name__)
     api = Api(app)
 
@@ -175,5 +179,8 @@ def create_app(
     api.add_resource(VoteResource, "/vote")
     api.add_resource(FeedResource, "/feed")
     api.add_resource(TagResource, "/tag", "/tag/<string:id>")
+
+    socketio.init_app(app, cors_allowed_origins="*", allow_unsafe_werkzeug=True)
+    handle_socketio_requests(socketio, app)  # This may be a bad usage.
 
     return app

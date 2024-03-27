@@ -1,4 +1,4 @@
-from app import create_app
+from app import create_app, socketio
 from app.config import HOST, PORT, DEBUG
 
 if __name__ == "__main__":
