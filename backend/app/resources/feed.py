@@ -101,6 +101,7 @@ class FeedResource(Resource):
         for post in results:
             # Convert content to a summary
             post["content"] = post["content"][:200] + "..."
+
             post_tag_ids = post["tags"]
             temp_tags = []
             for id in post_tag_ids:

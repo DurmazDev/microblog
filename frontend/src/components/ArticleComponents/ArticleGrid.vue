@@ -24,17 +24,17 @@
     </p>
     <div class="flex justify-between items-center">
       <div>
-      <RouterLink
-        :to="item.url.replace(config.frontendUrl, '')"
-        class="inline-flex items-center font-medium text-primary-600 hover:underline"
-      >
-        Read more
-        <img
-          class="ml-2 w-4 h-4 fill-current"
-          src="@/assets/icons/right-arrow.svg"
-          alt="right-arrow"
-        />
-      </RouterLink>
+        <RouterLink
+          :to="item.url.replace(config.frontendUrl, '')"
+          class="inline-flex items-center font-medium text-primary-600 hover:underline"
+        >
+          Read more
+          <img
+            class="ml-2 w-4 h-4 fill-current"
+            src="@/assets/icons/right-arrow.svg"
+            alt="right-arrow"
+          />
+        </RouterLink>
         <br />
         <div v-if="item.author">
           <RouterLink
