@@ -10,6 +10,35 @@
     v-else
     class="max-w-6xl mx-auto mt-4"
   >
+    <div
+      v-if="this.$store.getters.isAuthenticated"
+      class="flex justify-center text-center"
+    >
+      <div
+        :class="`w-1/2 pb-3 border-b-4 ${this.$route.query.q !== 'followed' ? 'border-b-blue-500' : ''}`"
+      >
+        <button
+          @click="
+            this.$route.query.q = null;
+            loadData();
+          "
+        >
+          Feed
+        </button>
+      </div>
+      <div
+        :class="`w-1/2 pb-3 border-b-4 ${this.$route.query.q === 'followed' ? 'border-b-blue-500' : ''}`"
+      >
+        <button
+          @click="
+            this.$route.query.q = 'followed';
+            loadData();
+          "
+        >
+          Followed
+        </button>
+      </div>
+    </div>
     <ArticleGrid :posts="this.post_list" />
     <PaginationComponents :pagination="this.pagination" />
   </div>
@@ -37,6 +66,7 @@
     },
     methods: {
       loadData() {
+        this.post_list = [];
         this.isLoading = true;
         let endpoint = "feed";
         const query_params = [];
@@ -49,6 +79,13 @@
         }
         if (this.$route.query.tag) {
           query_params.push("tag=" + this.$route.query.tag);
+        }
+        if (
+          this.$store.getters.isAuthenticated &&
+          this.$route.query.q &&
+          this.$route.query.q === "followed"
+        ) {
+          query_params.push("q=followed");
         }
 
         endpoint += "?" + query_params.join("&");
@@ -75,7 +112,6 @@
             "An error occurred while fetching data:",
             error.value
           );
-          // console.error("An error occurred while fetching data:", error.value);
         }
       },
     },

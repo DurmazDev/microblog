@@ -1,9 +1,10 @@
 from flask_restful import Resource, request
 from app.models.post import PostModel
-from app.models.user import UserModel
+from app.models.user import UserModel, UserFollowModel
 from app.models.tag import TagModel
 from app.schemas.post import PostSchema
 from app.models.tag import TagModel
+from app.middleware.auth import check_token
 
 
 class FeedResource(Resource):
@@ -16,6 +17,7 @@ class FeedResource(Resource):
         - limit (int, optional): Number of posts per page. Default is 50.
         - vote (str, optional): Sorting order based on votes. Use 'asc' for ascending and 'desc' for descending.
         - date (str, optional): Sorting order based on creation date. Use 'asc' for ascending and 'desc' for descending.
+        - q (str, optional): Filter posts based on followed users. Use 'followed' to filter posts from followed users only.
 
     Returns:
         A paginated feed of posts based on the specified parameters.
@@ -27,6 +29,7 @@ class FeedResource(Resource):
         sort_vote = request.args.get("vote", None, type=str)
         sort_date = request.args.get("date", "desc", type=str)
         sort_tag = request.args.get("tag", None, type=str)
+        followed_only = request.args.get("q", None, type=str)
 
         sort_values = []
 
@@ -42,12 +45,33 @@ class FeedResource(Resource):
                 sort_values.append("-created_at")
 
         skip = (page - 1) * limit
-        results = (
-            PostModel.objects(deleted_at=None)
-            .skip(skip)
-            .limit(limit)
-            .order_by(*sort_values)
-        )
+        if followed_only == "followed" and check_token(request) == True:
+            followed_users = UserFollowModel.objects.filter(
+                follower_id=request.user["id"]
+            ).only("followee_id")
+
+            if len(followed_users) == 0:
+                results = (
+                    PostModel.objects(deleted_at=None)
+                    .skip(skip)
+                    .limit(limit)
+                    .order_by(*sort_values)
+                )
+            else:
+                followed_users = [followed.followee_id for followed in followed_users]
+                results = (
+                    PostModel.objects(author__in=followed_users, deleted_at=None)
+                    .skip(skip)
+                    .limit(limit)
+                    .order_by(*sort_values)
+                )
+        else:
+            results = (
+                PostModel.objects(deleted_at=None)
+                .skip(skip)
+                .limit(limit)
+                .order_by(*sort_values)
+            )
 
         author_ids = [post["author"] for post in results]
         author_data = UserModel.objects(id__in=author_ids).only("id", "name")
@@ -75,6 +99,9 @@ class FeedResource(Resource):
             results = new_results + outher_results
 
         for post in results:
+            # Convert content to a summary
+            post["content"] = post["content"][:200] + "..."
+
             post_tag_ids = post["tags"]
             temp_tags = []
             for id in post_tag_ids:

@@ -23,17 +23,28 @@
       {{ item.content?.replace(/(<([^>]+)>)/gi, "") }}
     </p>
     <div class="flex justify-between items-center">
-      <RouterLink
-        :to="item.url.replace(config.frontendUrl, '')"
-        class="inline-flex items-center font-medium text-primary-600 hover:underline"
-      >
-        Read more
-        <img
-          class="ml-2 w-4 h-4 fill-current"
-          src="@/assets/icons/right-arrow.svg"
-          alt="right-arrow"
-        />
-      </RouterLink>
+      <div>
+        <RouterLink
+          :to="item.url.replace(config.frontendUrl, '')"
+          class="inline-flex items-center font-medium text-primary-600 hover:underline"
+        >
+          Read more
+          <img
+            class="ml-2 w-4 h-4 fill-current"
+            src="@/assets/icons/right-arrow.svg"
+            alt="right-arrow"
+          />
+        </RouterLink>
+        <br />
+        <div v-if="item.author">
+          <RouterLink
+            class="text-gray-500 hover:underline"
+            :to="`/profile/${item.author.id}`"
+          >
+            Author: {{ item.author.name }}
+          </RouterLink>
+        </div>
+      </div>
       <div class="flex">
         <TagButton
           :v-if="item.tags"
