@@ -7,6 +7,7 @@ import UserProfileView from "@/views/UserProfileView.vue";
 import AboutView from "@/views/AboutView.vue";
 import ArticleDetailView from "@/views/ArticleViews/ArticleDetailView.vue";
 import ArticleCreateView from "@/views/ArticleViews/ArticleCreateView.vue";
+import ChatView from "@/views/ChatView.vue";
 import NotFoundView from "@/views/NotFoundView.vue";
 
 const router = createRouter({
@@ -51,6 +52,11 @@ const router = createRouter({
       path: "/about",
       name: "about",
       component: AboutView,
+    },
+    {
+      path: "/chat",
+      name: "chat",
+      component: ChatView,
     },
     {
       path: "/:catchAll(.*)*",
