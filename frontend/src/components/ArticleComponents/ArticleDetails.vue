@@ -149,6 +149,7 @@
   import { useToast } from "vue-toastify";
   import TagButton from "../TagButtonComponent.vue";
   import { RouterLink } from "vue-router";
+  import { notificationSender } from "@/services/socket.service";
 
   export default {
     name: "ArticleDetailView",
@@ -191,6 +192,10 @@
             });
             this.$refs.commentTextAreaRef.value = "";
             useToast().success("Comment created successfully.");
+            if (this.article.author.id !== this.$store.getters.currentUser.id)
+              notificationSender(5, this.article.author.id, {
+                post_id: this.article.id,
+              });
           })
           .catch(() => {
             useToast().error("An error occurred while creating comment.");
@@ -242,6 +247,10 @@
               });
 
               useToast().success(response.data.message);
+              if (
+                this.article.author.id !== this.$store.getters.currentUser.id
+              )
+                notificationSender(3, this.article.author.id);
               return;
             }
           })
