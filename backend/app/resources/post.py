@@ -1,6 +1,5 @@
 from flask_restful import Resource, request
 from bson import ObjectId
-from marshmallow import fields
 from app.utils import decode_token
 from app.models.post import PostModel
 from app.models.user import UserModel, UserFollowModel
@@ -326,6 +325,7 @@ class PostTagsView(Resource):
                 return {"message": "Tag removed successfully."}, 204
             else:
                 return {"error": "No tag found with this id in post tags."}, 404
+
 
 def get_other_users_posts_with_user_id(id):
     try:

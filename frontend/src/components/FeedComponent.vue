@@ -15,6 +15,18 @@
       class="flex justify-center text-center"
     >
       <div
+        :class="`w-1/2 pb-3 border-b-4 ${this.$route.query.q === 'followed' ? 'border-b-blue-500' : ''}`"
+      >
+        <button
+          @click="
+            this.$route.query.q = 'followed';
+            loadData();
+          "
+        >
+          Followed
+        </button>
+      </div>
+      <div
         :class="`w-1/2 pb-3 border-b-4 ${this.$route.query.q !== 'followed' ? 'border-b-blue-500' : ''}`"
       >
         <button
@@ -29,14 +41,7 @@
       <div
         :class="`w-1/2 pb-3 border-b-4 ${this.$route.query.q === 'followed' ? 'border-b-blue-500' : ''}`"
       >
-        <button
-          @click="
-            this.$route.query.q = 'followed';
-            loadData();
-          "
-        >
-          Followed
-        </button>
+        <RouterLink to="/chat">Live Chat</RouterLink>
       </div>
     </div>
     <ArticleGrid :posts="this.post_list" />
@@ -45,13 +50,19 @@
 </template>
 
 <script>
+  import { RouterLink } from "vue-router";
   import LoadingComponent from "./LoadingComponent.vue";
   import ArticleGrid from "./ArticleComponents/ArticleGrid.vue";
   import { useToast } from "vue-toastify";
   import PaginationComponents from "./PaginationComponents.vue";
 
   export default {
-    components: { LoadingComponent, ArticleGrid, PaginationComponents },
+    components: {
+      LoadingComponent,
+      ArticleGrid,
+      PaginationComponents,
+      RouterLink,
+    },
     data() {
       return {
         post_list: [],
