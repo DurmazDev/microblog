@@ -1,4 +1,5 @@
 from app.utils import decode_token
+from app.middleware.auth import auth_required
 from flask_restful import request
 from flask_socketio import emit, rooms, join_room, leave_room
 from uuid import uuid4
@@ -85,25 +86,6 @@ def handle_socketio_requests(socketio, app):
             return None
         return notification_data
 
-    def get_user_data(req):
-        """
-        This function is used to get the user data from the request.
-
-        Args:
-            req (Request): The request object.
-
-        Returns:
-            dict: The user data.
-        """
-        token = req.headers.get("Authorization")
-        if token == None:
-            return
-        try:
-            return decode_token(token)
-        except Exception as e:
-            app.logger.error(e)
-            return
-
     def join_user(user_id, name):
         """
         This function is used to add the user to the active users list.
@@ -146,20 +128,15 @@ def handle_socketio_requests(socketio, app):
             socket_active_users.pop(user_index)
 
     @socketio.on("active_users")
+    @auth_required
     def get_active_users(data):
-        user_data = get_user_data(request)
-        if user_data == None:
-            return
         emit("active_users", {"users": socket_active_users})
 
     @socketio.on("message")
+    @auth_required
     def handle_message(data):
-        user_data = get_user_data(request)
-        if user_data == None:
-            return
-
-        user = user_data.get("name")
-        user_id = user_data.get("id")
+        user = request.user["name"]
+        user_id = request.user["id"]
         room = data.get("room")
         message = data.get("message")
         if room == None or message == None:
@@ -172,13 +149,10 @@ def handle_socketio_requests(socketio, app):
             )
 
     @socketio.on("join")
+    @auth_required
     def on_join(data):
-        user_data = get_user_data(request)
-        if user_data == None:
-            return
-
-        user = user_data.get("name")
-        user_id = user_data.get("id")
+        user = request.user["name"]
+        user_id = request.user["id"]
         join_user(user_id, user)
         room = data.get("room")
 
@@ -187,6 +161,7 @@ def handle_socketio_requests(socketio, app):
         emit("join", {"name": user, "user_id": user_id}, to=room)
 
     @socketio.on("private_chat_request")
+    @auth_required
     def on_private_chat_request(data):
         """
         This function is used to send private chat requests.
@@ -197,12 +172,8 @@ def handle_socketio_requests(socketio, app):
         Returns:
             None
         """
-        user_data = get_user_data(request)
-        if user_data == None:
-            return
-
-        user = user_data.get("name")
-        user_id = user_data.get("id")
+        user = request.user["name"]
+        user_id = request.user["id"]
         private_room_id = data.get("private_room_id")
         invited_user_id = data.get("invited_user_id")
         room = data.get("room")
@@ -236,13 +207,10 @@ def handle_socketio_requests(socketio, app):
         )
 
     @socketio.on("leave")
+    @auth_required
     def on_leave(data):
-        user_data = get_user_data(request)
-        if user_data == None:
-            return
-
-        user = user_data.get("name")
-        user_id = user_data.get("id")
+        user = request.user["name"]
+        user_id = request.user["name"]
         leave_user(user_id=user_id)
         room = data.get("room")
 
@@ -251,22 +219,21 @@ def handle_socketio_requests(socketio, app):
         emit("leave", {"name": user, "user_id": user_id}, to=room)
 
     @socketio.on("connect")
+    @auth_required
     def handle_connect():
-        user_data = get_user_data(request)
-        if user_data == None:
-            return
-
-        user = user_data.get("name")
-        user_id = user_data.get("id")
+        user = request.user["name"]
+        user_id = request.user["id"]
         join_user(user_id, user)
 
     @socketio.on("disconnect")
+    @auth_required
     def handle_disconnection():
         leave_user(sid=request.sid)
         for room in rooms(sid=request.sid):
             leave_room(room)
 
     @socketio.on("set:notification")
+    @auth_required
     def set_notification(data):
         """
         This function is used to send notifications to the user.
@@ -278,11 +245,7 @@ def handle_socketio_requests(socketio, app):
             None
 
         """
-        user_data = get_user_data(request)
-        if user_data == None:
-            return
-
-        user_name = user_data.get("name")
+        user_name = request.user["name"]
         user_id_to_notify = data.get("user_id")
         other_data = data.get(
             "additional_data"

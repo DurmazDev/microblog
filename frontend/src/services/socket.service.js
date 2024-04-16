@@ -1,6 +1,7 @@
 import { io } from "socket.io-client";
 import { reactive } from "vue";
 import { useToast } from "vue-toastify";
+import store from "@/stores";
 import config from "@/config";
 import { getToken } from "./jwt.service";
 
@@ -50,7 +51,7 @@ socket.on("active_users", (data) => {
 });
 
 socket.on("private_chat_request", (data) => {
-  if (data.invited_user_id !== this.$store.getters.currentUser.id) return;
+  if (data.invited_user_id !== store.getters.currentUser.id) return;
   if (confirm(`${data.name} invited you to a private chat. Do you accept?`)) {
     leaving();
     state.messages = [];

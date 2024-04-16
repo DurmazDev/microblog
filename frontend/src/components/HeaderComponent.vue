@@ -41,7 +41,7 @@
           >
             <span
               v-if="getUnreadNotificationCount() > 0"
-              class="fixed rounded-full bg-red-600 text-white py-0.5 px-2.5 top-1.5 text-[10px]"
+              class="absolute rounded-full bg-red-600 text-white py-0.5 px-2.5 top-1.5 text-[10px]"
             >
               {{ getUnreadNotificationCount() }}
             </span>
@@ -53,7 +53,7 @@
           </button>
           <div
             v-if="this.displayNotificationPopup"
-            class="fixed w-1/4 border-2 border-gray-200 bg-white shadow-lg rounded-lg p-4 top-14 right-[10%] z-50"
+            class="absolute w-1/4 border-2 border-gray-200 bg-white shadow-lg rounded-lg p-4 top-14 right-[10%] z-50"
           >
             <div v-if="state.notifications.length != 0">
               <ul>
