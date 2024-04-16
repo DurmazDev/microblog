@@ -137,6 +137,7 @@ def handle_socketio_requests(socketio, app):
     def handle_message(data):
         user = request.user["name"]
         user_id = request.user["id"]
+
         room = data.get("room")
         message = data.get("message")
         if room == None or message == None:
@@ -153,6 +154,7 @@ def handle_socketio_requests(socketio, app):
     def on_join(data):
         user = request.user["name"]
         user_id = request.user["id"]
+
         join_user(user_id, user)
         room = data.get("room")
 
@@ -174,6 +176,7 @@ def handle_socketio_requests(socketio, app):
         """
         user = request.user["name"]
         user_id = request.user["id"]
+
         private_room_id = data.get("private_room_id")
         invited_user_id = data.get("invited_user_id")
         room = data.get("room")
@@ -211,9 +214,9 @@ def handle_socketio_requests(socketio, app):
     def on_leave(data):
         user = request.user["name"]
         user_id = request.user["name"]
+        
         leave_user(user_id=user_id)
         room = data.get("room")
-
         leave_room(room)
         emit("active_users", socket_active_users, to=room)
         emit("leave", {"name": user, "user_id": user_id}, to=room)
