@@ -61,7 +61,15 @@
                   v-for="(item, index) in state.notifications"
                   :key="index"
                   class="flex items-center cursor-pointer"
-                  @click="readNotification(item.notification_id)"
+                  @click="
+                    item.type !== 'private_chat_request' && !item.read
+                      ? askJoinPrivateChat(
+                          item.notification_id,
+                          item.message,
+                          item.room_id
+                        )
+                      : readNotification(item.notification_id)
+                  "
                 >
                   <span
                     :class="`${item.read ? 'text-gray-500' : 'text-blue-500'} text-3xl`"
@@ -147,6 +155,12 @@
           "notifications",
           JSON.stringify(state.notifications)
         );
+      },
+      askJoinPrivateChat(notification_id, message, room_id) {
+        if (confirm(message)) {
+          window.location.href = `/chat#${room_id}`;
+          this.readNotification(notification_id);
+        }
       },
       clearNotifications() {
         state.notifications = [];

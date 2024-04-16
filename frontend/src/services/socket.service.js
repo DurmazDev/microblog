@@ -28,6 +28,9 @@ socket.on("disconnect", () => {
 
 socket.on("notification", (data) => {
   data.time = new Date().getTime();
+  if (data.message.endsWith("has sent you a private chat request.")) {
+    data.type = "private_chat_request";
+  }
   state.notifications.push(data);
   state.notifications.sort((a, b) => b.time - a.time);
   // Save last 25 notifications to local storage
