@@ -5,6 +5,7 @@
         <p>
           Connection status:
           {{ this.state.connected ? "Established" : "Not established" }}
+          {{ this.state.room }}
         </p>
         <span
           v-if="this.private_room_uri === null"
@@ -115,27 +116,19 @@
 </template>
 
 <script>
-  import { io } from "socket.io-client";
-  import config from "@/config";
-  import { getToken } from "@/services/jwt.service";
   import { useToast } from "vue-toastify";
+  import { socket, state, join, leaving } from "@/services/socket.service";
 
   export default {
     name: "ChatView",
     created() {
-      window.addEventListener("beforeunload", this.leaving);
+      window.addEventListener("beforeunload", leaving);
     },
     data() {
       return {
-        room: "public-room",
-        state: {
-          connected: false,
-          messages: [],
-          users: [],
-        },
+        state: state,
         private_room_uri: null,
         private_room_hash: null,
-        socket: io(config.apiUrl),
       };
     },
     computed: {
@@ -144,46 +137,15 @@
       },
     },
     mounted() {
-      this.socket.on("connect", () => {
-        this.state.connected = true;
-      });
-
-      this.socket.on("disconnect", () => {
-        this.state.connected = false;
-      });
-
-      this.socket.on("message", (data) => {
-        this.state.messages.push({
-          user_id: data.user_id,
-          name: data.name,
-          message: data.message,
-          date: new Date().getTime(),
-        });
-      });
-
-      this.socket.on("active_users", (data) => {
-        this.state.users = data;
-      });
-
-      this.socket.on("private_chat_request", (data) => {
-        if (data.invited_user_id !== this.$store.getters.currentUser.id)
-          return;
-        if (
-          confirm(`${data.name} invited you to a private chat. Do you accept?`)
-        ) {
-          this.leaving();
-          this.state.messages = [];
-          this.room = data.private_room_id;
-          window.location.hash = data.private_room_id;
-          this.join();
-          useToast().info("Successfully connected.");
-        }
-      });
+      this.state.messages = [];
+      this.state.room = "public-room";
+      this.private_room_uri = null;
+      this.private_room_hash = null;
 
       if (window.location.hash && !this.state.connected) {
         this.private_handler(window.location.hash);
       } else {
-        this.join();
+        join();
       }
     },
     methods: {
@@ -197,19 +159,19 @@
             window.location.origin + "/chat#" + room_hash;
           window.location.hash = room_hash;
 
-          this.leaving();
+          leaving();
           this.state.messages = [];
-          this.room = room_hash;
-          this.join();
+          this.state.room = room_hash;
+          join();
           return room_hash;
         }
-        this.leaving();
+        leaving();
         this.state.messages = [];
-        this.room = hash.substring(1);
-        this.join();
+        this.state.room = hash.substring(1);
+        join();
       },
       invite_private_chat(id) {
-        if (this.room !== "public-room") {
+        if (this.state.room !== "public-room") {
           useToast().error("You are already in private chat room.");
           return;
         }
@@ -217,36 +179,22 @@
           useToast().error("You cannot invite yourself to chat.");
           return;
         }
-        let tempRoom = this.room;
+        let tempRoom = this.state.room;
         let newRoomHash = this.private_handler();
-        this.socket.emit("private_chat_request", {
-          token: getToken(),
+        socket.emit("private_chat_request", {
           room: tempRoom,
           private_room_id: newRoomHash,
           invited_user_id: id,
         });
         useToast().info("Request sent.");
       },
-      leaving() {
-        this.socket.emit("leave", {
-          token: getToken(),
-          room: this.room,
-        });
-      },
       messages() {
         return this.state.messages;
       },
-      join() {
-        this.socket.emit("join", {
-          token: getToken(),
-          room: this.room,
-        });
-      },
       message(e) {
         e.preventDefault();
-        this.socket.emit("message", {
-          token: getToken(),
-          room: this.room,
+        socket.emit("message", {
+          room: this.state.room,
           message: this.$refs.send.value.trim(),
         });
         this.$refs.send.value = "";

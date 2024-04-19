@@ -38,9 +38,7 @@
           Feed
         </button>
       </div>
-      <div
-        :class="`w-1/2 pb-3 border-b-4 ${this.$route.query.q === 'followed' ? 'border-b-blue-500' : ''}`"
-      >
+      <div class="w-1/2 pb-3 border-b-4">
         <RouterLink to="/chat">Live Chat</RouterLink>
       </div>
     </div>
