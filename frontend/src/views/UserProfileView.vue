@@ -34,6 +34,7 @@
   import ArticleGrid from "@/components/ArticleComponents/ArticleGrid.vue";
   import LoadingComponent from "@/components/LoadingComponent.vue";
   import { useToast } from "vue-toastify";
+  import { notificationSender } from "@/services/socket.service";
 
   export default {
     name: "UserProfileView",
@@ -50,6 +51,7 @@
           .delete("/user/followers/" + this.$route.params.userID)
           .then(() => {
             this.user.is_follower = false;
+            notificationSender(4, this.$route.params.userID);
           })
           .catch((err) => {
             useToast().error(err.response.data.error);
@@ -61,6 +63,7 @@
             .delete("/user/" + this.$route.params.userID + "/follow")
             .then(() => {
               this.user.is_following = false;
+              notificationSender(1, this.$route.params.userID);
             })
             .catch((err) => {
               useToast().error(err.response.data.error);
@@ -71,6 +74,7 @@
           .post("/user/" + this.$route.params.userID + "/follow")
           .then(() => {
             this.user.is_following = true;
+            notificationSender(0, this.$route.params.userID);
           })
           .catch((err) => {
             useToast().error(err.response.data.error);

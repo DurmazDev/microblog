@@ -8,7 +8,7 @@
   >
     <div class="flex justify-between items-center mb-5 text-gray-500">
       <h2 class="mb-2 text-2xl font-bold tracking-tight text-gray-900">
-        <RouterLink :to="item.url.replace(config.frontendUrl, '')">{{
+        <RouterLink :to="'/' + item.url.replace(config.frontendUrl, '')">{{
           item.title
         }}</RouterLink>
       </h2>
@@ -26,13 +26,13 @@
       <div>
         <RouterLink
           :to="item.url.replace(config.frontendUrl, '')"
-          class="inline-flex items-center font-medium text-primary-600 hover:underline"
+          class="mb-1 inline-flex items-center font-medium text-primary-600 hover:underline"
         >
           Read more
           <img
-            class="ml-2 w-4 h-4 fill-current"
             src="@/assets/icons/right-arrow.svg"
-            alt="right-arrow"
+            class="ml-2 w-4 h-4"
+            alt="Notification"
           />
         </RouterLink>
         <br />
