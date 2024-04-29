@@ -1,6 +1,6 @@
 from flask_restful import Resource, request
 from bson import ObjectId
-from app.utils import decode_token
+from app.utils import decode_token, create_audit_log
 from app.models.post import PostModel
 from app.models.user import UserModel, UserFollowModel
 from app.models.comment import CommentModel
@@ -176,6 +176,12 @@ class PostResource(Resource):
         for key, value in data.items():
             setattr(post, key, value)
         post.save()
+        create_audit_log(
+            5,
+            request.remote_addr,
+            request.user_agent,
+            f"Post {post.id} updated.",
+        )
 
         comments = CommentModel.objects.filter(id__in=post.comments).limit(50)
         comments = comment_schema.dump(comments, many=True)

@@ -1,6 +1,6 @@
 from flask_restful import Resource, request
 from bson import ObjectId
-from app.utils import paginate_query
+from app.utils import paginate_query, create_audit_log
 
 from app.middleware.auth import auth_required
 from app.models.comment import CommentModel, AuthorEmbedded
@@ -59,6 +59,12 @@ class CommentResource(Resource):
 
         post.comments.append(created_comment.id)
         post.save()
+        create_audit_log(
+            5,
+            request.remote_addr,
+            request.user_agent,
+            f"Comment {created_comment.id} created.",
+        )
         return {
             "comment_id": str(created_comment.id),
             "message": "Comment successfully created.",
@@ -87,6 +93,12 @@ class CommentResource(Resource):
         for key, value in data.items():
             setattr(comment, key, value)
         comment.save()
+        create_audit_log(
+            5,
+            request.remote_addr,
+            request.user_agent,
+            f"Comment {comment.id} updated.",
+        )
         return comment_schema.dump(comment), 200
 
     @auth_required
@@ -116,4 +128,10 @@ class CommentResource(Resource):
         post.comments.remove(comment.id)
         post.save()
         comment.soft_delete()
+        create_audit_log(
+            5,
+            request.remote_addr,
+            request.user_agent,
+            f"Comment {comment.id} deleted.",
+        )
         return {}, 204

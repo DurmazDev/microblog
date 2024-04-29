@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_restful import Api
+from flask_restful import Api, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -15,7 +15,7 @@ from flask_socketio import SocketIO
 from app.socketio_handler import handle_socketio_requests
 import logging
 
-from app.utils import LogOutBlockList, decode_token
+from app.utils import LogOutBlockList, create_audit_log
 from app.config import REDIS_SYNC_INTERVAL, REDIS_SETTINGS, REDIS_URI, MONGODB_SETTINGS
 from app.database import connect_redis, connect_mongodb
 from app.resources.root import RootResource
@@ -89,6 +89,7 @@ def create_app(
     @app.errorhandler(ME_ValidationError)  # MongoEngine Validation Error
     def handle_validation_error(error):
         app.logger.error(error)
+        create_audit_log(3, request.remote_addr, request.user_agent.string, str(error))
         return {"error": "Unsupported ID value."}, 400
 
     @app.errorhandler(NotUniqueError)
@@ -104,6 +105,7 @@ def create_app(
     @app.errorhandler(KeyError)
     def handle_key_error(error):
         app.logger.error(error)
+        create_audit_log(3, request.remote_addr, request.user_agent.string, str(error))
         return {"error": "An error occurred."}, 500
 
     @app.errorhandler(404)
@@ -119,6 +121,7 @@ def create_app(
     @app.errorhandler(Exception)
     def handle_other_errors(error):
         app.logger.error(error)
+        create_audit_log(3, request.remote_addr, request.user_agent.string, str(error))
         return {"error": "An error occurred."}, 500
 
     if kwargs.get("TESTING") != True:

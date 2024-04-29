@@ -3,6 +3,7 @@ from app.models.vote import VoteModel
 from app.models.post import PostModel
 from app.schemas.vote import vote_schema
 from app.middleware.auth import auth_required
+from app.utils import create_audit_log
 
 
 class VoteResource(Resource):
@@ -68,6 +69,12 @@ class VoteResource(Resource):
             post_id=values["post_id"],
             vote_value=values["vote_value"],
         ).save()
+        create_audit_log(
+            5,
+            request.remote_addr,
+            request.user_agent,
+            f"User {request.user['id']} voted on post {values['post_id']}",
+        )
         post.vote += values["vote_value"]
         post.save()
         return {"message": "Vote saved successfully."}, 201
