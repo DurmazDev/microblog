@@ -135,7 +135,9 @@
               password: this.password,
             })
             .then((response) => {
-              if (response.status >= 200 && response.status < 300) {
+              if (response.status === 302) {
+                this.$router.push({ name: "verify-2fa" });
+              } else if (response.status >= 200 && response.status < 300) {
                 this.$router.push({ name: "home" });
               }
             })

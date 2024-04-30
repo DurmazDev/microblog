@@ -22,9 +22,11 @@ from app.resources.root import RootResource
 from app.resources.user import (
     UserResource,
     UserFollowResource,
-    getUsersFollowersView,
-    getUsersFollowingsView,
-    removeUsersFollowersView,
+    get_users_followers_view,
+    get_users_followings_view,
+    remove_users_followers_view,
+    setup_2fa_view,
+    verify_2fa_view,
 )
 from app.resources.post import (
     PostResource,
@@ -155,20 +157,24 @@ def create_app(
     app.add_url_rule(
         "/user/followers",
         "user_followers",
-        getUsersFollowersView,
+        get_users_followers_view,
         methods=["GET"],
     )
     app.add_url_rule(
         "/user/followers/<string:id>",
         "remove_followers",
-        removeUsersFollowersView,
+        remove_users_followers_view,
         methods=["DELETE"],
     )
     app.add_url_rule(
         "/user/followings",
         "user_following",
-        getUsersFollowingsView,
+        get_users_followings_view,
         methods=["GET"],
+    )
+    app.add_url_rule("/auth/setup-2fa", "setup-2fa", setup_2fa_view, methods=["GET", "DELETE"])
+    app.add_url_rule(
+        "/auth/verify-2fa/<string:otp>", "verify-2fa", verify_2fa_view, methods=["POST"]
     )
     app.add_url_rule("/auth/login", "login", LoginView, methods=["POST"])
     app.add_url_rule("/auth/register", "register", RegisterView, methods=["POST"])

@@ -3,6 +3,8 @@ import config from "@/config";
 import { InitApiService } from "@/services/api.service";
 
 export const LOGIN = "login";
+export const VERIFY_2FA = "verify2FA";
+export const SET_2FA_STATUS = "set2FAStatus";
 export const REGISTER = "register";
 export const LOGOUT = "logout";
 export const SET_AUTH = "setAuth";
@@ -25,6 +27,9 @@ const getters = {
   },
   isAuthenticated(state) {
     return state.isAuthenticated;
+  },
+  is2FAEnabled(state) {
+    return state.user && state.user.is_2fa_enabled;
   },
   errorMessages(state) {
     return state.errors;
@@ -52,6 +57,38 @@ const mutations = {
 };
 
 const actions = {
+  set2FAStatus(store, status) {
+    store.commit("setUser", {
+      ...store.state.user,
+      is_2fa_enabled: status,
+    });
+  },
+  verify2FA(store, verificationCode) {
+    return new Promise((resolve, reject) => {
+      api({
+        method: "POST",
+        url: "auth/verify-2fa/" + verificationCode,
+        headers: {
+          Authorization: `Bearer ${JwtService.getToken()}`,
+        },
+      })
+        .then((response) => {
+          store.commit("setAuth", {
+            user: response.data.user,
+            token: response.data.token,
+          });
+          resolve(response);
+        })
+        .catch((err) => {
+          let error_message = err.response.data.error;
+          store.commit(
+            "setError",
+            error_message ? error_message : "Something went wrong"
+          );
+          reject(err);
+        });
+    });
+  },
   login(store, credentials) {
     const body = {
       email: credentials.email,
@@ -71,6 +108,12 @@ const actions = {
           resolve(response);
         })
         .catch((err) => {
+          if (err.response.status === 302) {
+            state.errors = {};
+            JwtService.saveToken(err.response.data.token);
+            resolve(err.response);
+            return;
+          }
           let error_message = err.response.data.error;
           store.commit(
             "setError",

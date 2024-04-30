@@ -11,6 +11,7 @@
       :followers="followers"
       :followings="followings"
     />
+    <SettingsComponent />
   </div>
 </template>
 
@@ -18,6 +19,7 @@
   import ArticleGrid from "@/components/ArticleComponents/ArticleGrid.vue";
   import FollowerViewerComponent from "@/components/FollowerViewerComponent.vue";
   import LoadingComponent from "@/components/LoadingComponent.vue";
+  import SettingsComponent from "@/components/SettingsComponent.vue";
   import { useToast } from "vue-toastify";
 
   export default {
@@ -87,6 +89,11 @@
       this.getFollowers();
       this.getFollowings();
     },
-    components: { ArticleGrid, LoadingComponent, FollowerViewerComponent },
+    components: {
+      ArticleGrid,
+      LoadingComponent,
+      FollowerViewerComponent,
+      SettingsComponent,
+    },
   };
 </script>
