@@ -9,6 +9,7 @@ class UserSchema(Schema):
     name = fields.String()
     email = fields.Email()
     password = fields.String(load_only=True)
+    is_2fa_enabled = fields.Boolean(dump_only=True)
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
     deleted_at = fields.DateTime(dump_only=True)

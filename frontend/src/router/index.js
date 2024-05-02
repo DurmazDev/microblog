@@ -8,6 +8,8 @@ import AboutView from "@/views/AboutView.vue";
 import ArticleDetailView from "@/views/ArticleViews/ArticleDetailView.vue";
 import ArticleCreateView from "@/views/ArticleViews/ArticleCreateView.vue";
 import ChatView from "@/views/ChatView.vue";
+import Verify2FAView from "@/views/AuthViews/Verify2FAView.vue";
+import Setup2FAView from "@/views/AuthViews/Setup2FAView.vue";
 import NotFoundView from "@/views/NotFoundView.vue";
 
 const router = createRouter({
@@ -57,6 +59,16 @@ const router = createRouter({
       path: "/chat",
       name: "chat",
       component: ChatView,
+    },
+    {
+      path: "/setup-2fa",
+      name: "setup-2fa",
+      component: Setup2FAView,
+    },
+    {
+      path: "/verify-2fa",
+      name: "verify-2fa",
+      component: Verify2FAView,
     },
     {
       path: "/:catchAll(.*)*",

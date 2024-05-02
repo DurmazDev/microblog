@@ -2,6 +2,8 @@ from flask_restful import current_app
 from app.config import SECRET_KEY, MAX_BLOCKED_USER, JWT_ALGORITHM
 from datetime import datetime, timedelta
 from app.models.audit import AuditModel
+from io import BytesIO
+from base64 import b64encode
 import logging
 import math
 import jwt

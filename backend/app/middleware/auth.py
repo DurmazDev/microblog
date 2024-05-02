@@ -79,6 +79,14 @@ def auth_required(func):
                     "Invalid token.",
                 )
                 return {"error": "Invalid token."}, 401
+            if not "email" in decoded_token.keys():
+                create_audit_log(
+                    0,
+                    request.remote_addr,
+                    request.user_agent,
+                    "Invalid token.",
+                )
+                return {"error": "Invalid token."}, 401
             logout_query = current_app.config["logout_blocklist"].check_token(
                 decoded_token["id"], token
             )

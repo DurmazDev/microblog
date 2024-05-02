@@ -1,8 +1,8 @@
 from flask_restful import Resource, request
 from app.models.user import UserModel, UserFollowModel
 from app.schemas.user import user_schema, user_follow_schema
-from app.middleware.auth import auth_required
-from app.utils import create_audit_log
+from app.middleware.auth import auth_required, check_token
+from app.utils import create_audit_log, create_token
 from bson import ObjectId
 
 
@@ -142,7 +142,7 @@ class UserFollowResource(Resource):
 
 
 @auth_required
-def getUsersFollowersView():
+def get_users_followers_view():
     try:
         user_followers = UserFollowModel.objects(
             followee_id=request.user["id"], deleted_at=None
@@ -166,7 +166,7 @@ def getUsersFollowersView():
 
 
 @auth_required
-def getUsersFollowingsView():
+def get_users_followings_view():
     try:
         user_followings = UserFollowModel.objects(
             follower_id=request.user["id"], deleted_at=None
@@ -190,7 +190,7 @@ def getUsersFollowingsView():
 
 
 @auth_required
-def removeUsersFollowersView(id):
+def remove_users_followers_view(id):
     if request.user["id"] == id:
         return {"error": "You cannot unfollow yourself."}, 400
     try:
@@ -202,3 +202,61 @@ def removeUsersFollowersView(id):
 
     user_follow.soft_delete()
     return {"message": "User are not following you anymore."}, 202
+
+
+@auth_required
+def setup_2fa_view():
+    try:
+        user = UserModel.objects(id=request.user["id"], deleted_at=None).get()
+    except UserModel.DoesNotExist:
+        return {"error": "User not found."}, 404
+
+    if request.method == "DELETE":
+        if user.is_2fa_enabled == False:
+            return {"error": "2FA is already disabled."}, 400
+        user.is_2fa_enabled = False
+        del user.secret_token_2fa
+        user.save()
+        return {"message": "2FA disabled."}, 200
+
+    if user.is_2fa_enabled:
+        return {"error": "2FA is already enabled."}, 400
+    try:
+        secret = user.set_2fa_secret_token()
+        uri = user.get_authentication_setup_uri()
+        return {"secret": secret, "uri": uri}, 200
+    except:
+        return {
+            "error": "2FA setup failed, administration notified, please try again later."
+        }, 500
+
+
+# @auth_required
+def verify_2fa_view(otp):
+    token = check_token(request)
+    if token != True:
+        return {"error": "Unauthorized access."}, 401
+
+    # If 2fa requested, we return a JWT token with only user id in login view,
+    # so, if we have email field in JWT, user was logged in.
+    if "email" in request.user.keys():
+        return {"error": "Already logged in."}, 400
+
+    try:
+        user = UserModel.objects(id=request.user["id"], deleted_at=None).get()
+    except UserModel.DoesNotExist:
+        return {"error": "User not found."}, 404
+
+    if not user.is_otp_valid(otp):
+        return {"error": "Invalid OTP."}, 400
+
+    if not user.is_2fa_enabled:
+        user.is_2fa_enabled = True
+        user.save()
+
+    user_data = user_schema.dump(user)
+    return {
+        "message": "2FA verification successfull.",
+        "token": create_token(user_data),
+        "user": user_data,
+    }, 200

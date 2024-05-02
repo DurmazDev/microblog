@@ -72,6 +72,14 @@ def LoginView():
     user_data = user_schema.dump(user)
 
     if checkpw(values["password"].encode("utf-8"), user["password"].encode("utf-8")):
+        if user.is_2fa_enabled:
+            create_audit_log(
+                1, request.remote_addr, request.user_agent, f"User {user.id} tries login, 2fa requested."
+            )
+            return {
+                "message": "2FA is enabled, redirect to 2FA verification.",
+                "token": create_token({"id": str(user.id)}),
+            }, 302
         create_audit_log(
             1, request.remote_addr, request.user_agent, f"User {user.id} logged in."
         )
