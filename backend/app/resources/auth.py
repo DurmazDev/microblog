@@ -1,7 +1,7 @@
 from flask_restful import request, current_app
 from app.models.user import UserModel
 from app.schemas.user import user_schema
-from app.utils import create_token
+from app.utils import create_token, create_audit_log
 from app.middleware.auth import auth_required
 from bcrypt import checkpw, hashpw, gensalt
 
@@ -72,11 +72,18 @@ def LoginView():
     user_data = user_schema.dump(user)
 
     if checkpw(values["password"].encode("utf-8"), user["password"].encode("utf-8")):
+        create_audit_log(
+            1, request.remote_addr, request.user_agent, f"User {user.id} logged in."
+        )
         return {
             "message": "Successfully logged in.",
             "token": create_token(user_data),
             "user": user_data,
         }, 200
+
+    create_audit_log(
+        2, request.remote_addr, request.user_agent, "Authentication failure."
+    )
     return {"error": "Wrong email or password."}, 401
 
 
@@ -108,6 +115,10 @@ def RegisterView():
         email=values["email"],
         password=hashpw(values["password"].encode("utf-8"), gensalt(rounds=12)),
     ).save()
+
+    create_audit_log(
+        1, request.remote_addr, request.user_agent, f"User {user.id} created."
+    )
 
     user_data = user_schema.dump(user)
     return {

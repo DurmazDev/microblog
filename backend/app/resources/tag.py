@@ -1,6 +1,7 @@
 from flask_restful import Resource, request
 from bson import ObjectId
 
+from app.utils import create_audit_log
 from app.middleware.auth import auth_required
 from app.models.tag import TagModel
 from app.schemas.tag import tag_schema
@@ -97,6 +98,12 @@ class TagResource(Resource):
 
         tag.name = data["name"]
         tag.save()
+        create_audit_log(
+            5,
+            request.remote_addr,
+            request.user_agent,
+            f"Tag {tag.id} updated.",
+        )
         return tag_schema.dump(tag), 200
 
     @auth_required

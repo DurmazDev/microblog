@@ -1,6 +1,8 @@
 from flask_restful import current_app
 from app.config import SECRET_KEY, MAX_BLOCKED_USER, JWT_ALGORITHM
 from datetime import datetime, timedelta
+from app.models.audit import AuditModel
+import logging
 import math
 import jwt
 
@@ -164,3 +166,42 @@ def paginate_query(query, page: int, limit: int, schema, sort: [str] = []):
             "total_pages": total_pages,
         },
     }, 200
+
+
+def create_audit_log(
+    event_id: int = None,
+    request_ip: str = None,
+    request_user_agent: str = None,
+    description: str = None,
+):
+    """
+    This function creates an audit log.
+
+    Parameters
+    ----------
+    event_id: int
+        The event ID.
+    request_ip: str
+        The IP address of the request.
+    request_user_agent: str
+        The user agent of the request.
+    description: str
+        The description of the event.
+
+    Returns
+    -------
+    None
+    """
+    try:
+        AuditModel.objects.create(
+            event_id=event_id,
+            description=str(description),
+            request_ip=str(request_ip),
+            request_user_agent=str(request_user_agent),
+        )
+    except:
+        # Dunno this is the best way, but we should log the error.
+        logging.error(
+            f"Audit log creation failed. Audit log details: {event_id}, {description}, {request_ip}, {request_user_agent}"
+        )
+        pass

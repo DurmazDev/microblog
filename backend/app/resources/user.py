@@ -2,8 +2,8 @@ from flask_restful import Resource, request
 from app.models.user import UserModel, UserFollowModel
 from app.schemas.user import user_schema, user_follow_schema
 from app.middleware.auth import auth_required
+from app.utils import create_audit_log
 from bson import ObjectId
-import json
 
 
 class UserResource(Resource):
@@ -58,6 +58,12 @@ class UserResource(Resource):
         for key, value in data.items():
             setattr(user, key, value)
         user.save()
+        create_audit_log(
+            5,
+            request.remote_addr,
+            request.user_agent,
+            f"User {user.id} updated.",
+        )
         return user_schema.dump(user)
 
     @auth_required
