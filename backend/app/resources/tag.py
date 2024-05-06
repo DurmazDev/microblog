@@ -5,6 +5,7 @@ from app.utils import create_audit_log
 from app.middleware.auth import auth_required
 from app.models.tag import TagModel
 from app.schemas.tag import tag_schema
+from app.models.post import PostModel
 
 
 class TagResource(Resource):
@@ -121,10 +122,15 @@ class TagResource(Resource):
             tag = TagModel.objects(id=id, deleted_at=None).get()
             if tag.author != ObjectId(request.user["id"]):
                 return {"error": "You are not authorized for this event."}, 401
+            try:
+                posts = PostModel.objects(tags=tag.id, deleted_at=None)
+                for post in posts:
+                    post.tags.remove(tag.id)
+                    post.save()
+            except PostModel.DoesNotExist:
+                pass
         except TagModel.DoesNotExist:
             return {}, 204
-
-        # TODO(ahmet): Update post tags when a tag is deleted
 
         tag.soft_delete()
         return {}, 204

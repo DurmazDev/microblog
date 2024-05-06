@@ -2,7 +2,7 @@ from flask_restful import Resource, request
 from app.models.user import UserModel, UserFollowModel
 from app.schemas.user import user_schema, user_follow_schema
 from app.middleware.auth import auth_required, check_token
-from app.utils import create_audit_log, create_token
+from app.utils import create_audit_log, create_token, decode_token
 from bson import ObjectId
 
 
@@ -74,18 +74,24 @@ class UserResource(Resource):
         Returns:
             JSON: Message indicating account deletion confirmation email sent.
         """
-        try:
-            authenticated_user = UserModel.objects(
-                id=request.user["id"], deleted_at=None
-            ).get()
-        except UserModel.DoesNotExist:
-            return {"error": "You are not authorized for this event."}, 401
+        verification_token = request.args.get("verificationToken", None, type=str)
+        if verification_token:
+            try:
+                authenticated_user = UserModel.objects(
+                    id=request.user["id"], deleted_at=None
+                ).get()
+            except UserModel.DoesNotExist:
+                return {"error": "You are not authorized for this event."}, 401
 
-        # TODO(ahmet): send email for account deletion confirment
-        # TODO(ahmet): buradaki email onaylama işlemi yine burada yapılacak
-        # query param ile gelen bir token var mı bak, var ise tam silme
-        # işlemini gerçekleştir.
-        authenticated_user.soft_delete()
+            if decode_token(verification_token).get("user_id") != request.user["id"]:
+                return {"error": "Invalid verification token."}, 400
+
+            authenticated_user.soft_delete()
+            return {"message": "Your account has been deleted."}, 200
+
+        # TODO(ahmet): send email for account deletion confirment,
+        # send user_id in signed jwt.
+
         return {
             "message": "An email sent for delete confirmation, please confirm your deletion from your email."
         }, 202

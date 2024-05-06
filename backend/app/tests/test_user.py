@@ -53,7 +53,7 @@ def test_get_user(client):
 
 
 def test_get_user_not_found(client):
-    temp_token = create_token({"id": str(ObjectId())})
+    temp_token = create_token({"id": str(ObjectId()), "email": "test@test.com"})
     response = client.get("/user", headers={"Authorization": f"Bearer {temp_token}"})
 
     assert response.status_code == 404
@@ -89,16 +89,17 @@ def test_update_user_unauthorized(client):
 
 # TODO(ahmet): This test fails because of a bug in deletion code, firstly fix the deletion part of code.
 # then write unauthorized_deletion and not_found_deletion tests.
-# def test_delete_user(client):
-#     response = client.delete("/user", headers={"Authorization": f"Bearer {token}"})
+def test_delete_user(client):
+    response = client.delete("/user", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 202
+    assert "message" in response.json
+    assert (
+        response.json["message"]
+        == "An email sent for delete confirmation, please confirm your deletion from your email."
+    )
 
 
-#     assert response.status_code == 202
-#     assert "message" in response.json
-#     assert (
-#         response.json["message"]
-#         == "An email sent for delete confirmation, please confirm your deletion from your email."
-#     )
 def test_get_users_followings(client):
     UserFollowModel(follower_id=user["id"], followee_id=create_user()["id"]).save()
     response = client.get(
@@ -113,7 +114,7 @@ def test_get_users_followings(client):
 
 
 def test_get_users_followings_not_following(client):
-    temp_token = create_token({"id": str(ObjectId())})
+    temp_token = create_token({"id": str(ObjectId()), "email": "test@test.com"})
     response = client.get(
         "/user/followings", headers={"Authorization": f"Bearer {temp_token}"}
     )
