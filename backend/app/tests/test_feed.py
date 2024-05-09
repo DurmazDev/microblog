@@ -37,6 +37,10 @@ def client():
         yield client
 
 
+# This cases should be executed first
+# because other tests creates posts
+# and breaks this tests results.
+@pytest.mark.order(1)
 def test_get_feed_no_results(client):
     response = client.get("/feed")
 
@@ -44,6 +48,7 @@ def test_get_feed_no_results(client):
     assert response.json["error"] == "No results found."
 
 
+@pytest.mark.order(2)
 def test_get_feed_pagination(client):
     email = f"test_{uuid4()}@example.com"
     user1 = UserModel.objects.create(

@@ -54,7 +54,7 @@ def test_get_comments(client):
 
 def test_create_comment(client):
     post_id = create_post().id
-    token = create_token({"id": str(ObjectId()), "name": "Test User"})
+    token = create_token({"id": str(ObjectId()), "name": "Test User", "email": "test@test.com"})
     headers = {"Authorization": f"Bearer {token}"}
     data = {"post_id": str(post_id), "content": "New Comment"}
 
@@ -91,7 +91,7 @@ def test_update_comment(client):
     author_id = ObjectId()
     comment = create_comment(post_id=post_id, author=author_id)
 
-    token = create_token({"id": str(author_id), "name": "Test User"})
+    token = create_token({"id": str(author_id), "name": "Test User", "email": "test@test.com"})
     headers = {"Authorization": f"Bearer {token}"}
     data = {"content": "Updated Comment"}
 
@@ -103,7 +103,7 @@ def test_update_comment(client):
 
 
 def test_update_comment_not_found(client):
-    token = create_token({"id": str(ObjectId()), "name": "Test User"})
+    token = create_token({"id": str(ObjectId()), "name": "Test User", "email": "test@test.com"})
     headers = {"Authorization": f"Bearer {token}"}
     data = {"content": "Updated Comment"}
 
@@ -118,7 +118,7 @@ def test_update_comment_invalid_token(client):
     author_id = ObjectId()
     comment = create_comment(post_id=post_id, author=author_id)
 
-    token = create_token({"id": "invalid_id", "name": "Invalid User"})
+    token = create_token({"id": "invalid_id", "name": "Invalid User", "email": "test@test.com"})
     headers = {"Authorization": f"Bearer {token}"}
     data = {"content": "Updated Comment"}
 
@@ -132,7 +132,7 @@ def test_update_comment_unauthorized(client):
     post_id = create_post().id
     comment = create_comment(post_id=post_id)
 
-    token = create_token({"id": str(ObjectId()), "name": "Other User"})
+    token = create_token({"id": str(ObjectId()), "name": "Other User", "email": "test@test.com"})
     headers = {"Authorization": f"Bearer {token}"}
     data = {"content": "Updated Comment"}
 
@@ -148,7 +148,7 @@ def test_delete_comment(client):
     post_id = post.id
     comment = create_comment(post_id=post_id, author=author_id)
 
-    token = create_token({"id": str(author_id), "name": "Test User"})
+    token = create_token({"id": str(author_id), "name": "Test User", "email": "test@test.com"})
     headers = {"Authorization": f"Bearer {token}"}
 
     response = client.delete(f"/comment/{comment.id}", headers=headers)
@@ -158,7 +158,7 @@ def test_delete_comment(client):
 
 
 def test_delete_comment_not_found(client):
-    token = create_token({"id": str(ObjectId()), "name": "Test User"})
+    token = create_token({"id": str(ObjectId()), "name": "Test User", "email": "test@test.com"})
     headers = {"Authorization": f"Bearer {token}"}
 
     response = client.delete(f"/comment/{str(ObjectId())}", headers=headers)
@@ -168,7 +168,7 @@ def test_delete_comment_not_found(client):
 
 def test_delete_comment_unauthorized(client):
     comment = create_comment()
-    token = create_token({"id": str(ObjectId()), "name": "Other User"})
+    token = create_token({"id": str(ObjectId()), "name": "Other User", "email": "test@test.com"})
     headers = {"Authorization": f"Bearer {token}"}
 
     response = client.delete(f"/comment/{comment.id}", headers=headers)
