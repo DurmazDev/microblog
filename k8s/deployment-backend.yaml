@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: microblog-backend-deployment
+  labels:
+    app: microblog-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: microblog-backend
+  template:
+    metadata:
+      labels:
+        app: microblog-backend
+    spec:
+      containers:
+        - name: microblog-backend
+          image: microblog_backend
+          ports:
+            - containerPort: 8000
+          imagePullPolicy: Never
